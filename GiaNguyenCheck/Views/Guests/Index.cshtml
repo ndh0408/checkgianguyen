@@ -1,0 +1,516 @@
+@model IEnumerable<GiaNguyenCheck.Entities.Guest>
+@{
+    ViewData["Title"] = "Quản lý khách mời";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Quản lý khách mời</h1>
+        <div>
+            <a href="/Guests/Create" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Thêm khách mời
+            </a>
+            <button class="btn btn-success" onclick="importGuests()">
+                <i class="fas fa-upload"></i> Import Excel
+            </button>
+            <button class="btn btn-info" onclick="exportGuests()">
+                <i class="fas fa-download"></i> Xuất Excel
+            </button>
+            <button class="btn btn-warning" onclick="sendInvitations()">
+                <i class="fas fa-envelope"></i> Gửi vé mời
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label>Sự kiện</label>
+                    <select class="form-control" id="eventFilter">
+                        <option value="">Tất cả sự kiện</option>
+                        <!-- Events will be loaded dynamically -->
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Nhóm</label>
+                    <select class="form-control" id="groupFilter">
+                        <option value="">Tất cả nhóm</option>
+                        <option value="VIP">VIP</option>
+                        <option value="Thường">Thường</option>
+                        <option value="Media">Media</option>
+                        <option value="Đối tác">Đối tác</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Trạng thái check-in</label>
+                    <select class="form-control" id="checkInFilter">
+                        <option value="">Tất cả</option>
+                        <option value="checked">Đã check-in</option>
+                        <option value="not-checked">Chưa check-in</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>&nbsp;</label>
+                    <div>
+                        <button class="btn btn-primary" onclick="filterGuests()">
+                            <i class="fas fa-search"></i> Lọc
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearFilters()">
+                            <i class="fas fa-times"></i> Xóa lọc
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guests Table -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title">Danh sách khách mời</h5>
+                <div>
+                    <span class="badge badge-primary" id="totalGuests">@Model.Count() khách</span>
+                    <span class="badge badge-success" id="checkedInGuests">0 đã check-in</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="guestsTable">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                            </th>
+                            <th>Khách</th>
+                            <th>Liên hệ</th>
+                            <th>Sự kiện</th>
+                            <th>Nhóm</th>
+                            <th>Trạng thái</th>
+                            <th>QR Code</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var guest in Model)
+                        {
+                            <tr data-event-id="@guest.EventId" data-group="@guest.Group" data-checkin="@(guest.CheckIns?.Any() == true ? "checked" : "not-checked")">
+                                <td>
+                                    <input type="checkbox" class="guest-checkbox" value="@guest.Id">
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm me-2">
+                                            <img src="@(string.IsNullOrEmpty(guest.AvatarUrl) ? "/images/default-avatar.png" : guest.AvatarUrl)" 
+                                                 alt="Avatar" class="rounded-circle" width="32" height="32">
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">@guest.FullName</div>
+                                            <small class="text-muted">@guest.Email</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <i class="fas fa-envelope"></i> @guest.Email<br>
+                                        <i class="fas fa-phone"></i> @guest.Phone
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-info">@guest.Event?.Name</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-secondary">@guest.Group</span>
+                                </td>
+                                <td>
+                                    @if (guest.CheckIns?.Any() == true)
+                                    {
+                                        <span class="badge-checked-in">Đã check-in</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-not-checked">Chưa check-in</span>
+                                    }
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="showQRCode('@guest.Id')">
+                                        <i class="fas fa-qrcode"></i> Xem QR
+                                    </button>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="/Guests/Edit/@guest.Id" class="btn btn-sm btn-outline-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-info" onclick="sendInvitation('@guest.Id')">
+                                            <i class="fas fa-envelope"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger btn-delete" onclick="deleteGuest('@guest.Id')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Code Modal -->
+<div class="modal fade" id="qrCodeModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mã QR</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="qrCodeContainer"></div>
+                <div class="mt-3">
+                    <button class="btn btn-primary" onclick="downloadQRCode()">
+                        <i class="fas fa-download"></i> Tải xuống
+                    </button>
+                    <button class="btn btn-success" onclick="printQRCode()">
+                        <i class="fas fa-print"></i> In
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import khách mời từ Excel</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Chọn file Excel (.xlsx)</label>
+                        <input type="file" class="form-control-file" id="excelFile" name="excelFile" accept=".xlsx,.xls" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Sự kiện</label>
+                        <select class="form-control" id="importEventId" name="eventId" required>
+                            <option value="">Chọn sự kiện</option>
+                            <!-- Events will be loaded dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nhóm mặc định</label>
+                        <select class="form-control" id="importGroup" name="group">
+                            <option value="Thường">Thường</option>
+                            <option value="VIP">VIP</option>
+                            <option value="Media">Media</option>
+                            <option value="Đối tác">Đối tác</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6>Định dạng Excel:</h6>
+                        <p class="mb-1">Cột A: Họ tên</p>
+                        <p class="mb-1">Cột B: Email</p>
+                        <p class="mb-1">Cột C: Điện thoại</p>
+                        <p class="mb-0">Cột D: Nhóm (tùy chọn)</p>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="submitImport()">Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa khách mời này? Hành động này không thể hoàn tác.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentGuestId = null;
+        let dataTable = null;
+
+        $(document).ready(function() {
+            initializeDataTable();
+            loadEvents();
+            updateGuestStats();
+        });
+
+        function initializeDataTable() {
+            dataTable = $('#guestsTable').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Vietnamese.json'
+                },
+                responsive: true,
+                pageLength: 25,
+                order: [[1, 'asc']]
+            });
+        }
+
+        function loadEvents() {
+            fetch('/api/events/list')
+                .then(response => response.json())
+                .then(data => {
+                    const eventFilter = $('#eventFilter');
+                    const importEventId = $('#importEventId');
+                    
+                    data.forEach(event => {
+                        const option = `<option value="${event.id}">${event.name}</option>`;
+                        eventFilter.append(option);
+                        importEventId.append(option);
+                    });
+                })
+                .catch(error => console.error('Error loading events:', error));
+        }
+
+        function updateGuestStats() {
+            const totalGuests = $('#guestsTable tbody tr').length;
+            const checkedInGuests = $('#guestsTable tbody tr[data-checkin="checked"]').length;
+            
+            $('#totalGuests').text(`${totalGuests} khách`);
+            $('#checkedInGuests').text(`${checkedInGuests} đã check-in`);
+        }
+
+        function filterGuests() {
+            const eventId = $('#eventFilter').val();
+            const group = $('#groupFilter').val();
+            const checkIn = $('#checkInFilter').val();
+
+            $('#guestsTable tbody tr').each(function() {
+                let show = true;
+                const $row = $(this);
+                
+                if (eventId && $row.data('event-id') != eventId) show = false;
+                if (group && $row.data('group') !== group) show = false;
+                if (checkIn && $row.data('checkin') !== checkIn) show = false;
+                
+                $row.toggle(show);
+            });
+
+            updateGuestStats();
+        }
+
+        function clearFilters() {
+            $('#eventFilter').val('');
+            $('#groupFilter').val('');
+            $('#checkInFilter').val('');
+            
+            $('#guestsTable tbody tr').show();
+            updateGuestStats();
+        }
+
+        function toggleSelectAll() {
+            const isChecked = $('#selectAll').is(':checked');
+            $('.guest-checkbox').prop('checked', isChecked);
+        }
+
+        function showQRCode(guestId) {
+            currentGuestId = guestId;
+            
+            fetch(`/api/guests/${guestId}/qr-code`)
+                .then(response => response.json())
+                .then(data => {
+                    $('#qrCodeContainer').html(`
+                        <img src="${data.qrCodeUrl}" class="img-fluid" alt="QR Code">
+                        <p class="mt-2"><strong>${data.guestName}</strong></p>
+                    `);
+                    $('#qrCodeModal').modal('show');
+                })
+                .catch(error => {
+                    console.error('Error loading QR code:', error);
+                    showNotification('Lỗi tải mã QR', 'error');
+                });
+        }
+
+        function downloadQRCode() {
+            const link = document.createElement('a');
+            link.href = $('#qrCodeContainer img').attr('src');
+            link.download = `qr-${currentGuestId}.png`;
+            link.click();
+        }
+
+        function printQRCode() {
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>QR Code - ${currentGuestId}</title>
+                        <style>
+                            body { text-align: center; font-family: Arial, sans-serif; }
+                            img { max-width: 300px; }
+                        </style>
+                    </head>
+                    <body>
+                        ${$('#qrCodeContainer').html()}
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function importGuests() {
+            $('#importModal').modal('show');
+        }
+
+        function submitImport() {
+            const formData = new FormData();
+            const file = $('#excelFile')[0].files[0];
+            const eventId = $('#importEventId').val();
+            const group = $('#importGroup').val();
+
+            if (!file || !eventId) {
+                showNotification('Vui lòng chọn file và sự kiện', 'warning');
+                return;
+            }
+
+            formData.append('excelFile', file);
+            formData.append('eventId', eventId);
+            formData.append('group', group);
+
+            fetch('/api/guests/import', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Import thành công ${data.importedCount} khách mời`, 'success');
+                    $('#importModal').modal('hide');
+                    location.reload();
+                } else {
+                    showNotification(data.message || 'Lỗi import', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Import error:', error);
+                showNotification('Lỗi import file', 'error');
+            });
+        }
+
+        function exportGuests() {
+            const eventId = $('#eventFilter').val();
+            const group = $('#groupFilter').val();
+            const checkIn = $('#checkInFilter').val();
+
+            const params = new URLSearchParams();
+            if (eventId) params.append('eventId', eventId);
+            if (group) params.append('group', group);
+            if (checkIn) params.append('checkIn', checkIn);
+
+            window.location.href = `/api/guests/export?${params.toString()}`;
+        }
+
+        function sendInvitations() {
+            const selectedGuests = $('.guest-checkbox:checked').map(function() {
+                return $(this).val();
+            }).get();
+
+            if (selectedGuests.length === 0) {
+                showNotification('Vui lòng chọn khách mời để gửi vé', 'warning');
+                return;
+            }
+
+            if (confirm(`Gửi vé mời cho ${selectedGuests.length} khách?`)) {
+                fetch('/api/guests/send-invitations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ guestIds: selectedGuests })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(`Đã gửi vé mời cho ${data.sentCount} khách`, 'success');
+                    } else {
+                        showNotification(data.message || 'Lỗi gửi vé mời', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Send invitations error:', error);
+                    showNotification('Lỗi gửi vé mời', 'error');
+                });
+            }
+        }
+
+        function sendInvitation(guestId) {
+            fetch(`/api/guests/${guestId}/send-invitation`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Đã gửi vé mời thành công', 'success');
+                } else {
+                    showNotification(data.message || 'Lỗi gửi vé mời', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Send invitation error:', error);
+                showNotification('Lỗi gửi vé mời', 'error');
+            });
+        }
+
+        function deleteGuest(guestId) {
+            currentGuestId = guestId;
+            $('#deleteModal').modal('show');
+        }
+
+        $('#confirmDelete').click(function() {
+            if (currentGuestId) {
+                fetch(`/api/guests/${currentGuestId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Đã xóa khách mời thành công', 'success');
+                        $(`tr[data-id="${currentGuestId}"]`).fadeOut();
+                        $('#deleteModal').modal('hide');
+                        updateGuestStats();
+                    } else {
+                        showNotification(data.message || 'Lỗi xóa khách mời', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Delete guest error:', error);
+                    showNotification('Lỗi xóa khách mời', 'error');
+                });
+            }
+        });
+    </script>
+} 

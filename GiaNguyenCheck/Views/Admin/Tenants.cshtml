@@ -1,0 +1,253 @@
+@model List<GiaNguyenCheck.Entities.Tenant>
+@{
+    ViewData["Title"] = "Quản lý Tenant";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fa fa-building text-primary"></i> Quản lý Tenant</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTenantModal">
+        <i class="fa fa-plus"></i> Tạo Tenant mới
+    </button>
+</div>
+
+<!-- Bộ lọc và tìm kiếm -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">Tìm kiếm</label>
+                <input type="text" class="form-control" id="searchInput" placeholder="Tên tenant...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Gói dịch vụ</label>
+                <select class="form-select" id="planFilter">
+                    <option value="">Tất cả</option>
+                    <option value="Free">Free</option>
+                    <option value="Basic">Basic</option>
+                    <option value="Pro">Pro</option>
+                    <option value="Enterprise">Enterprise</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trạng thái</label>
+                <select class="form-select" id="statusFilter">
+                    <option value="">Tất cả</option>
+                    <option value="true">Hoạt động</option>
+                    <option value="false">Tạm khóa</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <button class="btn btn-secondary w-100" onclick="filterTenants()">
+                    <i class="fa fa-filter"></i> Lọc
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bảng danh sách tenant -->
+<div class="card shadow">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped" id="tenantsTable">
+                <thead>
+                    <tr>
+                        <th>Logo</th>
+                        <th>Tên Tenant</th>
+                        <th>Subdomain</th>
+                        <th>Gói dịch vụ</th>
+                        <th>Admin</th>
+                        <th>Ngày tạo</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tenant in Model)
+                    {
+                        <tr>
+                            <td>
+                                <img src="@(string.IsNullOrEmpty(tenant.LogoUrl) ? "/images/default-logo.png" : tenant.LogoUrl)" 
+                                     alt="Logo" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
+                            </td>
+                            <td>
+                                <strong>@tenant.Name</strong>
+                                <br><small class="text-muted">@tenant.Description</small>
+                            </td>
+                            <td>
+                                <code>@tenant.Subdomain.gianguyencheck.com</code>
+                            </td>
+                            <td>
+                                <span class="badge @GetPlanBadgeClass(tenant.Plan?.Name)">
+                                    @tenant.Plan?.Name
+                                </span>
+                            </td>
+                            <td>@tenant.AdminEmail</td>
+                            <td>@tenant.CreatedAt.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <span class="badge @(tenant.IsActive ? "bg-success" : "bg-danger")">
+                                    @(tenant.IsActive ? "Hoạt động" : "Tạm khóa")
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewTenant('@tenant.Id')">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editTenant('@tenant.Id')">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning" onclick="toggleTenantStatus('@tenant.Id', @tenant.IsActive.ToString().ToLower())">
+                                        <i class="fa @(tenant.IsActive ? "fa-pause" : "fa-play")"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTenant('@tenant.Id')">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal tạo tenant mới -->
+<div class="modal fade" id="createTenantModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tạo Tenant mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateTenant" method="post">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tên Tenant *</label>
+                                <input type="text" class="form-control" name="Name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Subdomain *</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="Subdomain" required>
+                                    <span class="input-group-text">.gianguyencheck.com</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Email Admin *</label>
+                                <input type="email" class="form-control" name="AdminEmail" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Gói dịch vụ *</label>
+                                <select class="form-select" name="PlanId" required>
+                                    <option value="">Chọn gói</option>
+                                    <option value="free">Free</option>
+                                    <option value="basic">Basic</option>
+                                    <option value="pro">Pro</option>
+                                    <option value="enterprise">Enterprise</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mô tả</label>
+                        <textarea class="form-control" name="Description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Tạo Tenant</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterTenants() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const plan = document.getElementById('planFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            const rows = document.querySelectorAll('#tenantsTable tbody tr');
+            
+            rows.forEach(row => {
+                const name = row.cells[1].textContent.toLowerCase();
+                const planText = row.cells[3].textContent;
+                const statusText = row.cells[6].textContent;
+                
+                const matchSearch = name.includes(search);
+                const matchPlan = !plan || planText.includes(plan);
+                const matchStatus = !status || (status === 'true' && statusText.includes('Hoạt động')) || 
+                                   (status === 'false' && statusText.includes('Tạm khóa'));
+                
+                row.style.display = matchSearch && matchPlan && matchStatus ? '' : 'none';
+            });
+        }
+
+        function viewTenant(id) {
+            window.location.href = `/Admin/Tenants/Details/${id}`;
+        }
+
+        function editTenant(id) {
+            window.location.href = `/Admin/Tenants/Edit/${id}`;
+        }
+
+        function toggleTenantStatus(id, currentStatus) {
+            const action = currentStatus === 'true' ? 'Tạm khóa' : 'Kích hoạt';
+            if (confirm(`Bạn có chắc muốn ${action.toLowerCase()} tenant này?`)) {
+                // Gọi API để toggle status
+                fetch(`/Admin/Tenants/ToggleStatus/${id}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Có lỗi xảy ra!');
+                        }
+                    });
+            }
+        }
+
+        function deleteTenant(id) {
+            if (confirm('Bạn có chắc muốn xóa tenant này? Hành động này không thể hoàn tác!')) {
+                fetch(`/Admin/Tenants/Delete/${id}`, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Có lỗi xảy ra!');
+                        }
+                    });
+            }
+        }
+    </script>
+}
+
+@functions {
+    private string GetPlanBadgeClass(string? planName)
+    {
+        return planName?.ToLower() switch
+        {
+            "free" => "bg-secondary",
+            "basic" => "bg-primary",
+            "pro" => "bg-warning",
+            "enterprise" => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+} 

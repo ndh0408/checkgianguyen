@@ -1,0 +1,352 @@
+@model GiaNguyenCheck.Controllers.TenantAdminController.TenantAdminDashboardViewModel
+@{
+    ViewData["Title"] = "Company Dashboard";
+    ViewData["Role"] = "TenantAdmin";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-3">
+            <i class="fa fa-building text-primary"></i> 
+            @Model.CompanyName - Company Dashboard
+        </h2>
+        <p class="text-muted">Quản lý tổng quan công ty và nhân viên</p>
+    </div>
+</div>
+
+<!-- Company Status Alert -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info d-flex align-items-center">
+            <i class="fa fa-info-circle me-2"></i>
+            <strong>Gói hiện tại:</strong> @Model.CurrentPlan?.Name - @Model.CurrentPlan?.Price?.ToString("N0") VNĐ/tháng
+            <span class="ms-3">
+                Sử dụng: @Model.UsageStatistics.EventsUsed/@Model.UsageStatistics.EventsLimit sự kiện | 
+                @Model.UsageStatistics.GuestsUsed/@Model.UsageStatistics.GuestsLimit khách
+            </span>
+            <a href="/TenantAdmin/BillingSubscription" class="btn btn-sm btn-outline-primary ms-auto">
+                <i class="fa fa-arrow-up"></i> Nâng cấp
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tổng nhân viên</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalEmployees</div>
+                        <small class="text-success">
+                            <i class="fa fa-arrow-up"></i> +3 tháng này
+                        </small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Tổng sự kiện</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalEvents</div>
+                        <small class="text-success">
+                            <i class="fa fa-arrow-up"></i> +5 tháng này
+                        </small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-calendar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tổng khách</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalGuests</div>
+                        <small class="text-success">
+                            <i class="fa fa-arrow-up"></i> +12% tháng này
+                        </small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-user-friends fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Tỷ lệ thành công</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.SuccessRate%</div>
+                        <small class="text-success">
+                            <i class="fa fa-arrow-up"></i> +2% tháng này
+                        </small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-chart-line fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Hoạt động nhân viên</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fa fa-ellipsis-v"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in">
+                        <a class="dropdown-item" href="/TenantAdmin/EmployeeManagement">Quản lý nhân viên</a>
+                        <a class="dropdown-item" href="/TenantAdmin/CompanyAnalytics">Xem chi tiết</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="employeeActivityChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Phân bố nhân viên</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="employeeRoleChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Events & Quick Actions -->
+<div class="row">
+    <div class="col-xl-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Sự kiện gần đây</h6>
+                <a href="/TenantAdmin/EventsOverview" class="btn btn-sm btn-primary">
+                    <i class="fa fa-arrow-right"></i> Xem tất cả
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Tên sự kiện</th>
+                                <th>Ngày</th>
+                                <th>Người quản lý</th>
+                                <th>Khách mời</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var evt in Model.RecentEvents)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@evt.Name</strong>
+                                        <br><small class="text-muted">@evt.Location</small>
+                                    </td>
+                                    <td>@evt.StartDate.ToString("dd/MM/yyyy")</td>
+                                    <td>@evt.CreatedByUser?.FullName</td>
+                                    <td>
+                                        <span class="badge bg-info">@(evt.Guests?.Count ?? 0) khách</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetEventStatusBadgeClass(evt.Status)">
+                                            @GetEventStatusDisplayName(evt.Status)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="/TenantAdmin/EventsOverview/Details/@evt.Id" class="btn btn-outline-info">
+                                                <i class="fa fa-eye"></i>
+                                            </a>
+                                            <a href="/TenantAdmin/EventsOverview/Edit/@evt.Id" class="btn btn-outline-primary">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Thao tác nhanh</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/TenantAdmin/EmployeeManagement" class="btn btn-outline-primary">
+                        <i class="fa fa-users"></i> Quản lý nhân viên
+                    </a>
+                    <a href="/TenantAdmin/EventsOverview" class="btn btn-outline-success">
+                        <i class="fa fa-calendar-plus"></i> Tạo sự kiện mới
+                    </a>
+                    <a href="/TenantAdmin/BillingSubscription" class="btn btn-outline-warning">
+                        <i class="fa fa-credit-card"></i> Thanh toán & Gói dịch vụ
+                    </a>
+                    <a href="/TenantAdmin/CompanySettings" class="btn btn-outline-info">
+                        <i class="fa fa-cog"></i> Cài đặt công ty
+                    </a>
+                    <a href="/TenantAdmin/CompanyAnalytics" class="btn btn-outline-secondary">
+                        <i class="fa fa-chart-bar"></i> Xem báo cáo
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Statistics -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Thống kê sử dụng</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Sự kiện</label>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: @(Model.UsageStatistics.EventsLimit > 0 ? (Model.UsageStatistics.EventsUsed * 100 / Model.UsageStatistics.EventsLimit) : 0)%">
+                            @Model.UsageStatistics.EventsUsed/@Model.UsageStatistics.EventsLimit
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Khách mời</label>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: @(Model.UsageStatistics.GuestsLimit > 0 ? (Model.UsageStatistics.GuestsUsed * 100 / Model.UsageStatistics.GuestsLimit) : 0)%">
+                            @Model.UsageStatistics.GuestsUsed/@Model.UsageStatistics.GuestsLimit
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Lưu trữ</label>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-info" role="progressbar" 
+                             style="width: @(Model.UsageStatistics.StorageLimit > 0 ? (Model.UsageStatistics.StorageUsed * 100 / Model.UsageStatistics.StorageLimit) : 0)%">
+                            @Model.UsageStatistics.StorageUsed.ToString("F1")/@Model.UsageStatistics.StorageLimit.ToString("F1") GB
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Employee Activity Chart
+        const employeeCtx = document.getElementById('employeeActivityChart').getContext('2d');
+        new Chart(employeeCtx, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.EmployeeActivity.Dates)),
+                datasets: [{
+                    label: 'Nhân viên hoạt động',
+                    data: @Html.Raw(Json.Serialize(Model.EmployeeActivity.ActiveEmployees)),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Employee Role Distribution Chart
+        const roleCtx = document.getElementById('employeeRoleChart').getContext('2d');
+        new Chart(roleCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Event Manager', 'Staff', 'Viewer'],
+                datasets: [{
+                    data: [3, 8, 2],
+                    backgroundColor: [
+                        'rgb(255, 99, 132)',
+                        'rgb(54, 162, 235)',
+                        'rgb(255, 205, 86)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+}
+
+@functions {
+    private string GetEventStatusBadgeClass(EventStatus status)
+    {
+        return status switch
+        {
+            EventStatus.Draft => "bg-secondary",
+            EventStatus.Published => "bg-primary",
+            EventStatus.Ongoing => "bg-success",
+            EventStatus.Completed => "bg-info",
+            EventStatus.Cancelled => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetEventStatusDisplayName(EventStatus status)
+    {
+        return status switch
+        {
+            EventStatus.Draft => "Nháp",
+            EventStatus.Published => "Đã xuất bản",
+            EventStatus.Ongoing => "Đang diễn ra",
+            EventStatus.Completed => "Hoàn thành",
+            EventStatus.Cancelled => "Đã hủy",
+            _ => status.ToString()
+        };
+    }
+} 

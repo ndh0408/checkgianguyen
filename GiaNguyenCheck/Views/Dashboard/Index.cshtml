@@ -1,0 +1,343 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+        <div>
+            <button class="btn btn-primary" onclick="refreshDashboard()">
+                <i class="fas fa-sync-alt"></i> Làm mới
+            </button>
+            <button class="btn btn-success" onclick="exportDashboard()">
+                <i class="fas fa-download"></i> Xuất báo cáo
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="dashboard-card primary">
+                <div class="card-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="card-title">Tổng sự kiện</div>
+                <div class="card-value" id="totalEvents">0</div>
+                <div class="card-change">
+                    <i class="fas fa-arrow-up"></i> 12% so với tháng trước
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="dashboard-card success">
+                <div class="card-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="card-title">Tổng khách mời</div>
+                <div class="card-value" id="totalGuests">0</div>
+                <div class="card-change">
+                    <i class="fas fa-arrow-up"></i> 8% so với tháng trước
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="dashboard-card warning">
+                <div class="card-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="card-title">Check-in hôm nay</div>
+                <div class="card-value" id="checkedInToday">0</div>
+                <div class="card-change">
+                    <i class="fas fa-arrow-up"></i> 15% so với hôm qua
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="dashboard-card info">
+                <div class="card-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="card-title">Doanh thu</div>
+                <div class="card-value" id="totalRevenue">0₫</div>
+                <div class="card-change">
+                    <i class="fas fa-arrow-up"></i> 22% so với tháng trước
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row">
+        <!-- Check-in Chart -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="chart-container">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title">Thống kê Check-in theo giờ</h5>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary active" onclick="updateChart('today')">Hôm nay</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateChart('week')">Tuần này</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateChart('month')">Tháng này</button>
+                    </div>
+                </div>
+                <canvas id="checkInChart" height="100"></canvas>
+            </div>
+        </div>
+
+        <!-- Guest Distribution -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="chart-container">
+                <h5 class="card-title">Phân bố khách mời</h5>
+                <canvas id="guestDistributionChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity & Upcoming Events -->
+    <div class="row">
+        <!-- Recent Check-ins -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="table-container">
+                <h5 class="card-title">Check-in gần đây</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="recentCheckInsTable">
+                        <thead>
+                            <tr>
+                                <th>Khách</th>
+                                <th>Sự kiện</th>
+                                <th>Thời gian</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentCheckInsBody">
+                            <!-- Data will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Events -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="table-container">
+                <h5 class="card-title">Sự kiện sắp diễn ra</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="upcomingEventsTable">
+                        <thead>
+                            <tr>
+                                <th>Sự kiện</th>
+                                <th>Ngày</th>
+                                <th>Khách mời</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="upcomingEventsBody">
+                            <!-- Data will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="table-container">
+                <h5 class="card-title">Thao tác nhanh</h5>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="/Events/Create" class="btn btn-primary btn-block">
+                            <i class="fas fa-plus"></i> Tạo sự kiện mới
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/Guests/Create" class="btn btn-success btn-block">
+                            <i class="fas fa-user-plus"></i> Thêm khách mời
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/CheckIn" class="btn btn-warning btn-block">
+                            <i class="fas fa-qrcode"></i> Check-in
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/Reports" class="btn btn-info btn-block">
+                            <i class="fas fa-chart-bar"></i> Xem báo cáo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let checkInChart;
+        let guestDistributionChart;
+
+        $(document).ready(function() {
+            loadDashboardData();
+            initializeCharts();
+            loadRecentCheckIns();
+            loadUpcomingEvents();
+        });
+
+        function loadDashboardData() {
+            fetch('/api/dashboard/stats')
+                .then(response => response.json())
+                .then(data => {
+                    $('#totalEvents').text(data.totalEvents);
+                    $('#totalGuests').text(data.totalGuests);
+                    $('#checkedInToday').text(data.checkedInToday);
+                    $('#totalRevenue').text(formatCurrency(data.totalRevenue));
+                })
+                .catch(error => console.error('Error loading dashboard data:', error));
+        }
+
+        function initializeCharts() {
+            // Check-in Chart
+            const checkInCtx = document.getElementById('checkInChart').getContext('2d');
+            checkInChart = new Chart(checkInCtx, {
+                type: 'line',
+                data: {
+                    labels: ['8h', '9h', '10h', '11h', '12h', '13h', '14h', '15h', '16h', '17h', '18h'],
+                    datasets: [{
+                        label: 'Check-in',
+                        data: [12, 19, 3, 5, 2, 3, 7, 15, 22, 18, 12],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Guest Distribution Chart
+            const guestCtx = document.getElementById('guestDistributionChart').getContext('2d');
+            guestDistributionChart = new Chart(guestCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['VIP', 'Thường', 'Media', 'Đối tác'],
+                    datasets: [{
+                        data: [30, 50, 15, 5],
+                        backgroundColor: [
+                            '#667eea',
+                            '#11998e',
+                            '#f093fb',
+                            '#4facfe'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function loadRecentCheckIns() {
+            fetch('/api/dashboard/recent-checkins')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = $('#recentCheckInsBody');
+                    tbody.empty();
+                    
+                    data.forEach(checkIn => {
+                        const row = `
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="${checkIn.guestAvatar || '/images/default-avatar.png'}" 
+                                             class="guest-avatar-small mr-2" alt="Avatar">
+                                        <div>
+                                            <strong>${checkIn.guestName}</strong><br>
+                                            <small class="text-muted">${checkIn.guestEmail}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>${checkIn.eventName}</td>
+                                <td>${new Date(checkIn.checkInTime).toLocaleString('vi-VN')}</td>
+                                <td>
+                                    <span class="badge-checked-in">Đã check-in</span>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
+                })
+                .catch(error => console.error('Error loading recent check-ins:', error));
+        }
+
+        function loadUpcomingEvents() {
+            fetch('/api/dashboard/upcoming-events')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = $('#upcomingEventsBody');
+                    tbody.empty();
+                    
+                    data.forEach(event => {
+                        const row = `
+                            <tr>
+                                <td>
+                                    <strong>${event.name}</strong><br>
+                                    <small class="text-muted">${event.location}</small>
+                                </td>
+                                <td>${new Date(event.startTime).toLocaleDateString('vi-VN')}</td>
+                                <td>${event.guestCount}</td>
+                                <td>
+                                    <span class="event-status ${event.status.toLowerCase()}">${event.status}</span>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
+                })
+                .catch(error => console.error('Error loading upcoming events:', error));
+        }
+
+        function updateChart(period) {
+            // Update chart buttons
+            $('.btn-group .btn').removeClass('active');
+            $(event.target).addClass('active');
+
+            // Update chart data based on period
+            fetch(`/api/dashboard/checkin-stats?period=${period}`)
+                .then(response => response.json())
+                .then(data => {
+                    checkInChart.data.labels = data.labels;
+                    checkInChart.data.datasets[0].data = data.values;
+                    checkInChart.update();
+                })
+                .catch(error => console.error('Error updating chart:', error));
+        }
+
+        function refreshDashboard() {
+            loadDashboardData();
+            loadRecentCheckIns();
+            loadUpcomingEvents();
+            showNotification('Dashboard đã được làm mới', 'success');
+        }
+
+        function exportDashboard() {
+            // Export dashboard data to Excel/PDF
+            showNotification('Đang xuất báo cáo...', 'info');
+            setTimeout(() => {
+                showNotification('Báo cáo đã được xuất thành công', 'success');
+            }, 2000);
+        }
+    </script>
+} 

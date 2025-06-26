@@ -1,0 +1,287 @@
+@model IEnumerable<GiaNguyenCheck.Entities.Event>
+@{
+    ViewData["Title"] = "Quản lý sự kiện";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Quản lý sự kiện</h1>
+        <div>
+            <a href="/Events/Create" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Tạo sự kiện mới
+            </a>
+            <button class="btn btn-success" onclick="exportEvents()">
+                <i class="fas fa-download"></i> Xuất Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label>Trạng thái</label>
+                    <select class="form-control" id="statusFilter">
+                        <option value="">Tất cả</option>
+                        <option value="Draft">Nháp</option>
+                        <option value="Published">Đã xuất bản</option>
+                        <option value="Ongoing">Đang diễn ra</option>
+                        <option value="Completed">Đã kết thúc</option>
+                        <option value="Cancelled">Đã hủy</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Từ ngày</label>
+                    <input type="date" class="form-control" id="startDateFilter">
+                </div>
+                <div class="col-md-3">
+                    <label>Đến ngày</label>
+                    <input type="date" class="form-control" id="endDateFilter">
+                </div>
+                <div class="col-md-3">
+                    <label>&nbsp;</label>
+                    <div>
+                        <button class="btn btn-primary" onclick="filterEvents()">
+                            <i class="fas fa-search"></i> Lọc
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearFilters()">
+                            <i class="fas fa-times"></i> Xóa lọc
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div class="row" id="eventsGrid">
+        @foreach (var item in Model)
+        {
+            <div class="col-xl-4 col-md-6 mb-4 event-item" data-status="@item.Status" data-date="@item.StartTime.ToString("yyyy-MM-dd")">
+                <div class="event-card">
+                    <div class="event-image" style="background-image: url('@(string.IsNullOrEmpty(item.ImageUrl) ? "/images/default-event.jpg" : item.ImageUrl)')">
+                        <span class="event-status @item.Status.ToString().ToLowerInvariant()">@item.Status</span>
+                    </div>
+                    <div class="event-body">
+                        <h5 class="card-title">@item.Name</h5>
+                        <p class="card-text text-muted">@item.Description</p>
+                        
+                        <div class="event-details">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar"></i> Ngày
+                                    </small>
+                                    <div>@item.StartTime.ToString("dd/MM/yyyy")</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock"></i> Giờ
+                                    </small>
+                                    <div>@item.StartTime.ToString("HH:mm")</div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt"></i> Địa điểm
+                                    </small>
+                                    <div>@item.Location</div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="fas fa-users"></i> Khách mời
+                                    </small>
+                                    <div>@item.Guests?.Count() / @item.MaxGuests</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="fas fa-check-circle"></i> Check-in
+                                    </small>
+                                    <div>@(item.Guests?.Count(g => g.CheckIns?.Any() == true) ?? 0)</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="event-actions mt-3">
+                            <div class="btn-group w-100" role="group">
+                                <a href="/Events/Details/@item.Id" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i> Xem
+                                </a>
+                                <a href="/Events/Edit/@item.Id" class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-edit"></i> Sửa
+                                </a>
+                                <a href="/Guests?eventId=@item.Id" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-users"></i> Khách
+                                </a>
+                                <button class="btn btn-outline-danger btn-sm btn-delete" onclick="deleteEvent(@item.Id)">
+                                    <i class="fas fa-trash"></i> Xóa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-5" style="display: none;">
+        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">Không có sự kiện nào</h4>
+        <p class="text-muted">Bắt đầu tạo sự kiện đầu tiên của bạn</p>
+        <a href="/Events/Create" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Tạo sự kiện mới
+        </a>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa sự kiện này? Hành động này không thể hoàn tác.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentEventId = null;
+
+        $(document).ready(function() {
+            initializeDataTable('#eventsTable');
+        });
+
+        function filterEvents() {
+            const status = $('#statusFilter').val();
+            const startDate = $('#startDateFilter').val();
+            const endDate = $('#endDateFilter').val();
+
+            $('.event-item').each(function() {
+                let show = true;
+                const $item = $(this);
+                const itemStatus = $item.data('status');
+                const itemDate = $item.data('date');
+
+                // Filter by status
+                if (status && itemStatus !== status) {
+                    show = false;
+                }
+
+                // Filter by date range
+                if (startDate && itemDate < startDate) {
+                    show = false;
+                }
+                if (endDate && itemDate > endDate) {
+                    show = false;
+                }
+
+                $item.toggle(show);
+            });
+
+            // Show/hide empty state
+            const visibleItems = $('.event-item:visible').length;
+            if (visibleItems === 0) {
+                $('#eventsGrid').hide();
+                $('#emptyState').show();
+            } else {
+                $('#eventsGrid').show();
+                $('#emptyState').hide();
+            }
+        }
+
+        function clearFilters() {
+            $('#statusFilter').val('');
+            $('#startDateFilter').val('');
+            $('#endDateFilter').val('');
+            
+            $('.event-item').show();
+            $('#eventsGrid').show();
+            $('#emptyState').hide();
+        }
+
+        function deleteEvent(eventId) {
+            currentEventId = eventId;
+            $('#deleteModal').modal('show');
+        }
+
+        $('#confirmDelete').click(function() {
+            if (currentEventId) {
+                fetch(`/api/events/${currentEventId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Sự kiện đã được xóa thành công', 'success');
+                        $(`.event-item[data-id="${currentEventId}"]`).fadeOut();
+                        $('#deleteModal').modal('hide');
+                    } else {
+                        showNotification(data.message || 'Lỗi xóa sự kiện', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting event:', error);
+                    showNotification('Lỗi xóa sự kiện', 'error');
+                });
+            }
+        });
+
+        function exportEvents() {
+            const status = $('#statusFilter').val();
+            const startDate = $('#startDateFilter').val();
+            const endDate = $('#endDateFilter').val();
+
+            const params = new URLSearchParams();
+            if (status) params.append('status', status);
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+
+            window.location.href = `/api/events/export?${params.toString()}`;
+        }
+
+        // Auto-refresh events status
+        setInterval(function() {
+            updateEventStatuses();
+        }, 30000); // Every 30 seconds
+
+        function updateEventStatuses() {
+            fetch('/api/events/status-updates')
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(update => {
+                        const $eventItem = $(`.event-item[data-id="${update.eventId}"]`);
+                        if ($eventItem.length) {
+                            $eventItem.find('.event-status')
+                                .removeClass()
+                                .addClass(`event-status ${update.newStatus.toLowerCase()}`)
+                                .text(update.newStatus);
+                        }
+                    });
+                })
+                .catch(error => console.error('Error updating event statuses:', error));
+        }
+    </script>
+} 

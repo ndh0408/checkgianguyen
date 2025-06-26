@@ -1,0 +1,331 @@
+@model GiaNguyenCheck.Controllers.SystemAdminController.SystemAdminDashboardViewModel
+@{
+    ViewData["Title"] = "System Dashboard";
+    ViewData["Role"] = "SystemAdmin";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-3">
+            <i class="fa fa-chart-line text-primary"></i> 
+            System Administration Dashboard
+        </h2>
+        <p class="text-muted">Quản lý toàn bộ platform GiaNguyenCheck</p>
+    </div>
+</div>
+
+<!-- System Health Status -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert @(Model.SystemHealth.Status == "Healthy" ? "alert-success" : "alert-warning") d-flex align-items-center">
+            <i class="fa fa-server me-2"></i>
+            <strong>System Status:</strong> @Model.SystemHealth.Status
+            <span class="ms-3">
+                CPU: @Model.SystemHealth.CpuUsage% | 
+                Memory: @Model.SystemHealth.MemoryUsage% | 
+                Disk: @Model.SystemHealth.DiskUsage%
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tổng khách hàng</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalCustomers</div>
+                        <small class="text-success">
+                            <i class="fa fa-arrow-up"></i> +12% tháng này
+                        </small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-building fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Doanh thu tháng</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.MonthlyRevenue.ToString("N0") VNĐ</div>
+                        <small class="text-success">
+                            <i class="fa fa-arrow-up"></i> +8% so với tháng trước
+                        </small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tỷ lệ churn</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ChurnRate%</div>
+                        <small class="text-danger">
+                            <i class="fa fa-arrow-up"></i> +2% cần chú ý
+                        </small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-chart-line fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Tổng sự kiện</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.PlatformMetrics.TotalEvents</div>
+                        <small class="text-success">
+                            <i class="fa fa-arrow-up"></i> +15% tuần này
+                        </small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-calendar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Doanh thu theo tháng</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fa fa-ellipsis-v"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in">
+                        <a class="dropdown-item" href="#">Xuất báo cáo</a>
+                        <a class="dropdown-item" href="#">Cài đặt</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Phân bố gói dịch vụ</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="planChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Platform Metrics -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Platform Metrics</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="border rounded p-3">
+                            <h4 class="text-primary">@Model.PlatformMetrics.TotalUsers</h4>
+                            <p class="text-muted mb-0">Tổng người dùng</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="border rounded p-3">
+                            <h4 class="text-success">@Model.PlatformMetrics.ActiveUsers</h4>
+                            <p class="text-muted mb-0">Người dùng hoạt động</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="border rounded p-3">
+                            <h4 class="text-info">@Model.PlatformMetrics.ConversionRate%</h4>
+                            <p class="text-muted mb-0">Tỷ lệ chuyển đổi</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="border rounded p-3">
+                            <h4 class="text-warning">@Model.PlatformMetrics.TotalEvents</h4>
+                            <p class="text-muted mb-0">Tổng sự kiện</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Customers -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Khách hàng gần đây</h6>
+                <a href="/SystemAdmin/CustomerManagement" class="btn btn-sm btn-primary">
+                    <i class="fa fa-arrow-right"></i> Xem tất cả
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Công ty</th>
+                                <th>Gói dịch vụ</th>
+                                <th>Ngày đăng ký</th>
+                                <th>Trạng thái</th>
+                                <th>Doanh thu</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var customer in Model.RecentCustomers)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="@(string.IsNullOrEmpty(customer.LogoUrl) ? "/images/default-logo.png" : customer.LogoUrl)" 
+                                                 alt="Logo" style="width:32px; height:32px; object-fit:cover; border-radius:4px;" class="me-2">
+                                            <div>
+                                                <strong>@customer.Name</strong>
+                                                <br><small class="text-muted">@customer.Subdomain.gianguyencheck.com</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetPlanBadgeClass(customer.Plan?.Name)">
+                                            @customer.Plan?.Name
+                                        </span>
+                                    </td>
+                                    <td>@customer.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="badge @(customer.IsActive ? "bg-success" : "bg-danger")">
+                                            @(customer.IsActive ? "Hoạt động" : "Tạm khóa")
+                                        </span>
+                                    </td>
+                                    <td>@(customer.Plan?.Price?.ToString("N0") ?? "0") VNĐ</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="/SystemAdmin/CustomerManagement/Details/@customer.Id" class="btn btn-sm btn-outline-info">
+                                                <i class="fa fa-eye"></i>
+                                            </a>
+                                            <a href="/SystemAdmin/CustomerManagement/Edit/@customer.Id" class="btn btn-sm btn-outline-primary">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Revenue Chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.RevenueChart.Labels)),
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: @Html.Raw(Json.Serialize(Model.RevenueChart.Data)),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return new Intl.NumberFormat('vi-VN').format(value) + ' VNĐ';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Plan Distribution Chart
+        const planCtx = document.getElementById('planChart').getContext('2d');
+        new Chart(planCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Free', 'Basic', 'Pro', 'Enterprise'],
+                datasets: [{
+                    data: [30, 25, 35, 10],
+                    backgroundColor: [
+                        'rgb(255, 99, 132)',
+                        'rgb(54, 162, 235)',
+                        'rgb(255, 205, 86)',
+                        'rgb(75, 192, 192)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+}
+
+@functions {
+    private string GetPlanBadgeClass(string? planName)
+    {
+        return planName?.ToLower() switch
+        {
+            "free" => "bg-secondary",
+            "basic" => "bg-primary",
+            "pro" => "bg-warning",
+            "enterprise" => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+} 

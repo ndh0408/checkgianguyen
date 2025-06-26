@@ -1,0 +1,287 @@
+@{
+    ViewData["Title"] = "Bảng giá";
+}
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="display-4 fw-bold mb-4">Bảng giá linh hoạt</h1>
+            <p class="lead">Chọn gói phù hợp với quy mô sự kiện của bạn</p>
+            <div class="mt-4">
+                <span class="text-light me-3">Thanh toán hàng tháng</span>
+                <div class="form-check form-switch d-inline-block">
+                    <input class="form-check-input" type="checkbox" id="annualBilling">
+                    <label class="form-check-label text-light" for="annualBilling">
+                        Thanh toán hàng năm <span class="badge bg-warning text-dark">Tiết kiệm 20%</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Cards -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4 justify-content-center">
+            <!-- FREE Plan -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card pricing-card border shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <h5 class="card-title text-muted">FREE</h5>
+                        <div class="mb-4">
+                            <span class="display-4 fw-bold">0đ</span>
+                            <span class="text-muted">/tháng</span>
+                        </div>
+                        <p class="text-muted mb-4">Hoàn hảo để thử nghiệm</p>
+                        <ul class="list-unstyled text-start mb-4">
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>1 sự kiện</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>50 khách mời</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>QR check-in cơ bản</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Thống kê cơ bản</li>
+                            <li class="mb-2"><i class="bi bi-x text-danger me-2"></i>Email tự động</li>
+                            <li class="mb-2"><i class="bi bi-x text-danger me-2"></i>Báo cáo chi tiết</li>
+                            <li class="mb-2"><i class="bi bi-x text-danger me-2"></i>Hỗ trợ ưu tiên</li>
+                        </ul>
+                        <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#registerModal">Bắt đầu miễn phí</button>
+                        <small class="text-muted d-block mt-2">Không cần thẻ tín dụng</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BASIC Plan -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card pricing-card featured border shadow-lg h-100">
+                    <div class="badge-featured">Phổ biến</div>
+                    <div class="card-body text-center p-4">
+                        <h5 class="card-title">BASIC</h5>
+                        <div class="mb-4">
+                            <span class="display-4 fw-bold monthly-price">299K</span>
+                            <span class="display-4 fw-bold annual-price d-none">240K</span>
+                            <span class="text-muted">/tháng</span>
+                        </div>
+                        <p class="text-muted mb-4">Cho sự kiện nhỏ và vừa</p>
+                        <ul class="list-unstyled text-start mb-4">
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>5 sự kiện</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>1,000 khách mời</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>QR check-in đầy đủ</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Email tự động</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Báo cáo chi tiết</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>2 thiết bị check-in</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Hỗ trợ email</li>
+                        </ul>
+                        <button class="btn btn-primary w-100">Chọn gói này</button>
+                        <small class="text-muted d-block mt-2">Dùng thử 14 ngày miễn phí</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PRO Plan -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card pricing-card border shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <h5 class="card-title">PRO</h5>
+                        <div class="mb-4">
+                            <span class="display-4 fw-bold monthly-price">799K</span>
+                            <span class="display-4 fw-bold annual-price d-none">640K</span>
+                            <span class="text-muted">/tháng</span>
+                        </div>
+                        <p class="text-muted mb-4">Cho doanh nghiệp lớn</p>
+                        <ul class="list-unstyled text-start mb-4">
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>20 sự kiện</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>5,000 khách mời</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Tùy chỉnh giao diện</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>API tích hợp</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Webhook thông báo</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>5 thiết bị check-in</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Hỗ trợ ưu tiên</li>
+                        </ul>
+                        <button class="btn btn-outline-primary w-100">Chọn gói này</button>
+                        <small class="text-muted d-block mt-2">Dùng thử 14 ngày miễn phí</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ENTERPRISE Plan -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card pricing-card border shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <h5 class="card-title">ENTERPRISE</h5>
+                        <div class="mb-4">
+                            <span class="display-4 fw-bold">Liên hệ</span>
+                        </div>
+                        <p class="text-muted mb-4">Giải pháp doanh nghiệp</p>
+                        <ul class="list-unstyled text-start mb-4">
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Sự kiện không giới hạn</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Khách mời không giới hạn</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>White-label solution</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Tên miền riêng</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>SSO Integration</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Thiết bị không giới hạn</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Hỗ trợ 24/7</li>
+                        </ul>
+                        <a href="/Home/Contact" class="btn btn-outline-primary w-100">Liên hệ tư vấn</a>
+                        <small class="text-muted d-block mt-2">Báo giá tùy chỉnh</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature Comparison -->
+<section class="bg-light py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">So sánh tính năng</h2>
+            <p class="text-muted">Chi tiết các tính năng theo từng gói</p>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered bg-white">
+                <thead>
+                    <tr>
+                        <th scope="col">Tính năng</th>
+                        <th scope="col" class="text-center">FREE</th>
+                        <th scope="col" class="text-center bg-primary text-white">BASIC</th>
+                        <th scope="col" class="text-center">PRO</th>
+                        <th scope="col" class="text-center">ENTERPRISE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Số sự kiện</td>
+                        <td class="text-center">1</td>
+                        <td class="text-center">5</td>
+                        <td class="text-center">20</td>
+                        <td class="text-center">Không giới hạn</td>
+                    </tr>
+                    <tr>
+                        <td>Số khách mời</td>
+                        <td class="text-center">50</td>
+                        <td class="text-center">1,000</td>
+                        <td class="text-center">5,000</td>
+                        <td class="text-center">Không giới hạn</td>
+                    </tr>
+                    <tr>
+                        <td>QR Check-in</td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Email tự động</td>
+                        <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Báo cáo chi tiết</td>
+                        <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td>API & Webhook</td>
+                        <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                        <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Tùy chỉnh giao diện</td>
+                        <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                        <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td>White-label</td>
+                        <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                        <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                        <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                        <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Hỗ trợ</td>
+                        <td class="text-center">Community</td>
+                        <td class="text-center">Email</td>
+                        <td class="text-center">Ưu tiên</td>
+                        <td class="text-center">24/7</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Câu hỏi thường gặp</h2>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion" id="pricingFAQ">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                Tôi có thể thay đổi gói dịch vụ không?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#pricingFAQ">
+                            <div class="accordion-body">
+                                Có, bạn có thể nâng cấp hoặc hạ cấp gói dịch vụ bất cứ lúc nào. Phí sẽ được tính theo tỷ lệ cho thời gian sử dụng thực tế.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                Có ràng buộc hợp đồng không?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+                            <div class="accordion-body">
+                                Không có ràng buộc hợp đồng. Bạn có thể hủy dịch vụ bất cứ lúc nào mà không mất phí phạt.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                Dữ liệu có được bảo mật không?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+                            <div class="accordion-body">
+                                Chúng tôi sử dụng mã hóa AES 256-bit và tuân thủ các tiêu chuẩn bảo mật quốc tế để bảo vệ dữ liệu của bạn.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+document.getElementById('annualBilling').addEventListener('change', function() {
+    const monthlyPrices = document.querySelectorAll('.monthly-price');
+    const annualPrices = document.querySelectorAll('.annual-price');
+    
+    if (this.checked) {
+        monthlyPrices.forEach(p => p.classList.add('d-none'));
+        annualPrices.forEach(p => p.classList.remove('d-none'));
+    } else {
+        monthlyPrices.forEach(p => p.classList.remove('d-none'));
+        annualPrices.forEach(p => p.classList.add('d-none'));
+    }
+});
+</script>
+} 

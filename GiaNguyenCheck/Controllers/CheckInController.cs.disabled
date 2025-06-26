@@ -1,0 +1,196 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
+using GiaNguyenCheck.DTOs;
+using GiaNguyenCheck.Interfaces;
+using GiaNguyenCheck.Constants;
+using GiaNguyenCheck.Hubs;
+using System.Security.Claims;
+
+namespace GiaNguyenCheck.Controllers
+{
+    /// <summary>
+    /// Controller cho check-in QR code
+    /// </summary>
+    [ApiController]
+    [Route("api/[controller]")]
+    public class CheckInController : ControllerBase
+    {
+        private readonly IQRCodeService _qrCodeService;
+        private readonly ILogger<CheckInController> _logger;
+
+        public CheckInController(
+            IQRCodeService qrCodeService,
+            ILogger<CheckInController> logger)
+        {
+            _qrCodeService = qrCodeService;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Validate QR code
+        /// </summary>
+        [HttpPost("validate")]
+        public async Task<ActionResult<ApiResponse<string>>> ValidateQRCode([FromBody] ValidateQRCodeDto dto)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(dto.QRCode))
+                {
+                    return BadRequest(ApiResponse<string>.ErrorResult("QR Code không được để trống"));
+                }
+
+                // Giải mã QR code
+                var decryptedData = _qrCodeService.DecryptQRData(dto.QRCode);
+                
+                if (string.IsNullOrEmpty(decryptedData))
+                {
+                    return BadRequest(ApiResponse<string>.ErrorResult("QR Code không hợp lệ"));
+                }
+
+                return Ok(ApiResponse<string>.SuccessResult(decryptedData, "QR Code hợp lệ"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi validate QR code");
+                return StatusCode(500, ApiResponse<string>.ErrorResult("Lỗi server"));
+            }
+        }
+
+        /// <summary>
+        /// Generate QR code (test endpoint)
+        /// </summary>
+        [HttpPost("generate")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<QRCodeResultDto>>> GenerateQRCode([FromBody] GenerateQRCodeDto dto)
+        {
+            try
+            {
+                var data = $"GuestId:{dto.GuestId}|EventId:{dto.EventId}|Timestamp:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+                var encryptedData = _qrCodeService.EncryptQRData(data);
+                var qrImage = _qrCodeService.GenerateQRCodeImage(encryptedData, 256);
+
+                var result = new QRCodeResultDto
+                {
+                    QRCode = encryptedData,
+                    QRImageBase64 = Convert.ToBase64String(qrImage),
+                    ExpiresAt = DateTime.UtcNow.AddDays(30) // QR codes expire in 30 days
+                };
+
+                return Ok(ApiResponse<QRCodeResultDto>.SuccessResult(result, "Tạo QR code thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tạo QR code");
+                return StatusCode(500, ApiResponse<QRCodeResultDto>.ErrorResult("Lỗi server"));
+            }
+        }
+
+        /// <summary>
+        /// Simulate check-in (for testing without full implementation)
+        /// </summary>
+        [HttpPost("checkin")]
+        public async Task<ActionResult<ApiResponse<CheckInResultDto>>> CheckIn([FromBody] PerformCheckInDto dto)
+        {
+            try
+            {
+                // Validate QR code
+                var decryptedData = _qrCodeService.DecryptQRData(dto.QRCode);
+                
+                if (string.IsNullOrEmpty(decryptedData))
+                {
+                    return BadRequest(ApiResponse<CheckInResultDto>.ErrorResult("QR Code không hợp lệ"));
+                }
+
+                // Parse guest and event info from QR
+                var parts = decryptedData.Split('|');
+                if (parts.Length < 2)
+                {
+                    return BadRequest(ApiResponse<CheckInResultDto>.ErrorResult("QR Code không đúng định dạng"));
+                }
+
+                // Simulate successful check-in
+                var result = new CheckInResultDto
+                {
+                    Success = true,
+                    Message = "Check-in thành công",
+                    CheckIn = new CheckInDto
+                    {
+                        Id = Guid.NewGuid(),
+                        CheckInTime = DateTime.UtcNow,
+                        Status = Entities.CheckInStatus.CheckedIn,
+                        Type = dto.Type,
+                        DeviceInfo = dto.DeviceInfo,
+                        Location = dto.Location,
+                        Notes = dto.Notes,
+                        IsSynced = true,
+                        CreatedAt = DateTime.UtcNow,
+                        GuestFullName = "Demo Guest",
+                        GuestEmail = "demo@example.com",
+                        GuestType = Entities.GuestType.Regular,
+                        EventName = "Demo Event"
+                    }
+                };
+
+                return Ok(ApiResponse<CheckInResultDto>.SuccessResult(result, "Check-in thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi check-in");
+                return StatusCode(500, ApiResponse<CheckInResultDto>.ErrorResult("Lỗi server"));
+            }
+        }
+
+        /// <summary>
+        /// Get check-in statistics (demo)
+        /// </summary>
+        [HttpGet("stats")]
+        public async Task<ActionResult<ApiResponse<object>>> GetStats()
+        {
+            try
+            {
+                var stats = new
+                {
+                    TotalCheckIns = 42,
+                    CheckInsToday = 15,
+                    CheckInsThisHour = 3,
+                    LastCheckIn = DateTime.UtcNow.AddMinutes(-5)
+                };
+
+                return Ok(ApiResponse<object>.SuccessResult(stats, "Lấy thống kê thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy thống kê");
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Lỗi server"));
+            }
+        }
+    }
+
+    /// <summary>
+    /// DTO cho validate QR code
+    /// </summary>
+    public class ValidateQRCodeDto
+    {
+        public string QRCode { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO cho generate QR code
+    /// </summary>
+    public class GenerateQRCodeDto
+    {
+        public Guid GuestId { get; set; }
+        public Guid EventId { get; set; }
+    }
+
+    /// <summary>
+    /// DTO cho kết quả tạo QR code
+    /// </summary>
+    public class QRCodeResultDto
+    {
+        public string QRCode { get; set; } = string.Empty;
+        public string QRImageBase64 { get; set; } = string.Empty;
+        public DateTime ExpiresAt { get; set; }
+    }
+} 

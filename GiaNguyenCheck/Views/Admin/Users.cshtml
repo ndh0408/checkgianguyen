@@ -1,0 +1,339 @@
+@model List<GiaNguyenCheck.Entities.User>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fa fa-users text-primary"></i> Quản lý người dùng</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+        <i class="fa fa-plus"></i> Tạo người dùng mới
+    </button>
+</div>
+
+<!-- Bộ lọc và tìm kiếm -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">Tìm kiếm</label>
+                <input type="text" class="form-control" id="searchInput" placeholder="Tên, email...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Role</label>
+                <select class="form-select" id="roleFilter">
+                    <option value="">Tất cả</option>
+                    <option value="SystemAdmin">System Admin</option>
+                    <option value="TenantAdmin">Tenant Admin</option>
+                    <option value="EventManager">Event Manager</option>
+                    <option value="Staff">Staff</option>
+                    <option value="Viewer">Viewer</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tenant</label>
+                <select class="form-select" id="tenantFilter">
+                    <option value="">Tất cả</option>
+                    @foreach (var tenant in ViewBag.Tenants ?? new List<object>())
+                    {
+                        <option value="@tenant.Id">@tenant.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Trạng thái</label>
+                <select class="form-select" id="statusFilter">
+                    <option value="">Tất cả</option>
+                    <option value="true">Hoạt động</option>
+                    <option value="false">Tạm khóa</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button class="btn btn-secondary w-100" onclick="filterUsers()">
+                    <i class="fa fa-filter"></i> Lọc
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bảng danh sách người dùng -->
+<div class="card shadow">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>Avatar</th>
+                        <th>Thông tin</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Tenant</th>
+                        <th>Ngày tạo</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td>
+                                <img src="@(string.IsNullOrEmpty(user.AvatarUrl) ? "/images/default-avatar.png" : user.AvatarUrl)" 
+                                     alt="Avatar" style="width:40px; height:40px; object-fit:cover; border-radius:50%;">
+                            </td>
+                            <td>
+                                <strong>@user.FullName</strong>
+                                <br><small class="text-muted">@user.PhoneNumber</small>
+                            </td>
+                            <td>@user.Email</td>
+                            <td>
+                                <span class="badge @GetRoleBadgeClass(user.Role)">
+                                    @GetRoleDisplayName(user.Role)
+                                </span>
+                            </td>
+                            <td>@user.Tenant?.Name</td>
+                            <td>@user.CreatedAt.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <span class="badge @(user.IsActive ? "bg-success" : "bg-danger")">
+                                    @(user.IsActive ? "Hoạt động" : "Tạm khóa")
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewUser('@user.Id')">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editUser('@user.Id')">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning" onclick="changeRole('@user.Id', '@user.Role')">
+                                        <i class="fa fa-user-cog"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="toggleUserStatus('@user.Id', @user.IsActive.ToString().ToLower())">
+                                        <i class="fa @(user.IsActive ? "fa-pause" : "fa-play")"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal tạo người dùng mới -->
+<div class="modal fade" id="createUserModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tạo người dùng mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateUser" method="post">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Họ và tên *</label>
+                                <input type="text" class="form-control" name="FullName" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Email *</label>
+                                <input type="email" class="form-control" name="Email" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Số điện thoại</label>
+                                <input type="tel" class="form-control" name="PhoneNumber">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Role *</label>
+                                <select class="form-select" name="Role" required>
+                                    <option value="">Chọn role</option>
+                                    <option value="SystemAdmin">System Admin</option>
+                                    <option value="TenantAdmin">Tenant Admin</option>
+                                    <option value="EventManager">Event Manager</option>
+                                    <option value="Staff">Staff</option>
+                                    <option value="Viewer">Viewer</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tenant</label>
+                                <select class="form-select" name="TenantId">
+                                    <option value="">Chọn tenant</option>
+                                    @foreach (var tenant in ViewBag.Tenants ?? new List<object>())
+                                    {
+                                        <option value="@tenant.Id">@tenant.Name</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Mật khẩu *</label>
+                                <input type="password" class="form-control" name="Password" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Tạo người dùng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thay đổi role -->
+<div class="modal fade" id="changeRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thay đổi role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="changeRoleForm">
+                <div class="modal-body">
+                    <input type="hidden" id="userId" name="userId">
+                    <div class="mb-3">
+                        <label class="form-label">Role mới</label>
+                        <select class="form-select" id="newRole" name="newRole" required>
+                            <option value="SystemAdmin">System Admin</option>
+                            <option value="TenantAdmin">Tenant Admin</option>
+                            <option value="EventManager">Event Manager</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Viewer">Viewer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Cập nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterUsers() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const role = document.getElementById('roleFilter').value;
+            const tenant = document.getElementById('tenantFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            const rows = document.querySelectorAll('#usersTable tbody tr');
+            
+            rows.forEach(row => {
+                const name = row.cells[1].textContent.toLowerCase();
+                const email = row.cells[2].textContent.toLowerCase();
+                const roleText = row.cells[3].textContent;
+                const tenantText = row.cells[4].textContent;
+                const statusText = row.cells[6].textContent;
+                
+                const matchSearch = name.includes(search) || email.includes(search);
+                const matchRole = !role || roleText.includes(role);
+                const matchTenant = !tenant || tenantText.includes(tenant);
+                const matchStatus = !status || (status === 'true' && statusText.includes('Hoạt động')) || 
+                                   (status === 'false' && statusText.includes('Tạm khóa'));
+                
+                row.style.display = matchSearch && matchRole && matchTenant && matchStatus ? '' : 'none';
+            });
+        }
+
+        function viewUser(id) {
+            window.location.href = `/Admin/Users/Details/${id}`;
+        }
+
+        function editUser(id) {
+            window.location.href = `/Admin/Users/Edit/${id}`;
+        }
+
+        function changeRole(id, currentRole) {
+            document.getElementById('userId').value = id;
+            document.getElementById('newRole').value = currentRole;
+            new bootstrap.Modal(document.getElementById('changeRoleModal')).show();
+        }
+
+        function toggleUserStatus(id, currentStatus) {
+            const action = currentStatus === 'true' ? 'Tạm khóa' : 'Kích hoạt';
+            if (confirm(`Bạn có chắc muốn ${action.toLowerCase()} người dùng này?`)) {
+                fetch(`/Admin/Users/ToggleStatus/${id}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Có lỗi xảy ra!');
+                        }
+                    });
+            }
+        }
+
+        // Xử lý form thay đổi role
+        document.getElementById('changeRoleForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const userId = document.getElementById('userId').value;
+            const newRole = document.getElementById('newRole').value;
+            
+            fetch('/Admin/UpdateUserRole', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userId, role: newRole })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Có lỗi xảy ra!');
+                }
+            });
+        });
+    </script>
+}
+
+@functions {
+    private string GetRoleBadgeClass(UserRole role)
+    {
+        return role switch
+        {
+            UserRole.SystemAdmin => "bg-danger",
+            UserRole.TenantAdmin => "bg-primary",
+            UserRole.EventManager => "bg-warning",
+            UserRole.Staff => "bg-info",
+            UserRole.Viewer => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetRoleDisplayName(UserRole role)
+    {
+        return role switch
+        {
+            UserRole.SystemAdmin => "System Admin",
+            UserRole.TenantAdmin => "Tenant Admin",
+            UserRole.EventManager => "Event Manager",
+            UserRole.Staff => "Staff",
+            UserRole.Viewer => "Viewer",
+            _ => role.ToString()
+        };
+    }
+} 

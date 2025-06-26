@@ -1,0 +1,210 @@
+@model GiaNguyenCheck.Controllers.AdminController.SystemAdminDashboardViewModel
+@{
+    ViewData["Title"] = "Tổng quan hệ thống";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-3"><i class="fa fa-chart-line text-primary"></i> Tổng quan hệ thống</h2>
+    </div>
+</div>
+
+<!-- Thống kê tổng quan -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tổng số Tenant</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalTenants</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-building fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Tổng người dùng</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalUsers</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tổng sự kiện</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalEvents</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-calendar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Doanh thu</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalRevenue.ToString("N0") VNĐ</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Biểu đồ và thống kê -->
+<div class="row mb-4">
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Thống kê hoạt động</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="systemChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Phân bố Tenant</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="tenantChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tenant gần đây -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Tenant gần đây</h6>
+                <a href="/Admin/Tenants" class="btn btn-sm btn-primary">Xem tất cả</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Tên Tenant</th>
+                                <th>Subdomain</th>
+                                <th>Gói dịch vụ</th>
+                                <th>Ngày tạo</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tenant in Model.RecentTenants)
+                            {
+                                <tr>
+                                    <td>@tenant.Name</td>
+                                    <td>@tenant.Subdomain</td>
+                                    <td>@tenant.Plan?.Name</td>
+                                    <td>@tenant.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="badge @(tenant.IsActive ? "bg-success" : "bg-danger")">
+                                            @(tenant.IsActive ? "Hoạt động" : "Tạm khóa")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="/Admin/Tenants/Details/@tenant.Id" class="btn btn-sm btn-info">
+                                            <i class="fa fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Biểu đồ hoạt động hệ thống
+        const systemCtx = document.getElementById('systemChart').getContext('2d');
+        new Chart(systemCtx, {
+            type: 'line',
+            data: {
+                labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+                datasets: [{
+                    label: 'Tenant mới',
+                    data: [12, 19, 3, 5, 2, 3, 7, 8, 9, 10, 11, 12],
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }, {
+                    label: 'Sự kiện',
+                    data: [65, 59, 80, 81, 56, 55, 40, 45, 50, 55, 60, 65],
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Biểu đồ phân bố tenant
+        const tenantCtx = document.getElementById('tenantChart').getContext('2d');
+        new Chart(tenantCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Free', 'Basic', 'Pro', 'Enterprise'],
+                datasets: [{
+                    data: [30, 25, 35, 10],
+                    backgroundColor: [
+                        'rgb(255, 99, 132)',
+                        'rgb(54, 162, 235)',
+                        'rgb(255, 205, 86)',
+                        'rgb(75, 192, 192)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+} 

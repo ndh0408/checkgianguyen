@@ -1,0 +1,426 @@
+@model IEnumerable<GiaNguyenCheck.Entities.Payment>
+@{
+    ViewData["Title"] = "Quản lý thanh toán";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Quản lý thanh toán</h1>
+        <div>
+            <button class="btn btn-primary" onclick="createPayment()">
+                <i class="fas fa-plus"></i> Tạo thanh toán
+            </button>
+            <button class="btn btn-success" onclick="exportPayments()">
+                <i class="fas fa-download"></i> Xuất báo cáo
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="dashboard-card primary">
+                <div class="card-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="card-title">Tổng doanh thu</div>
+                <div class="card-value" id="totalRevenue">0₫</div>
+                <div class="card-change">
+                    <i class="fas fa-arrow-up"></i> 15% so với tháng trước
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="dashboard-card success">
+                <div class="card-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="card-title">Thanh toán thành công</div>
+                <div class="card-value" id="successfulPayments">0</div>
+                <div class="card-change">
+                    <i class="fas fa-arrow-up"></i> 8% so với tháng trước
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="dashboard-card warning">
+                <div class="card-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="card-title">Đang chờ xử lý</div>
+                <div class="card-value" id="pendingPayments">0</div>
+                <div class="card-change">
+                    <i class="fas fa-arrow-down"></i> 5% so với tháng trước
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="dashboard-card info">
+                <div class="card-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="card-title">Tổng giao dịch</div>
+                <div class="card-value" id="totalTransactions">0</div>
+                <div class="card-change">
+                    <i class="fas fa-arrow-up"></i> 12% so với tháng trước
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label>Trạng thái</label>
+                    <select class="form-control" id="statusFilter">
+                        <option value="">Tất cả</option>
+                        <option value="Pending">Chờ xử lý</option>
+                        <option value="Completed">Thành công</option>
+                        <option value="Failed">Thất bại</option>
+                        <option value="Refunded">Hoàn tiền</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Phương thức</label>
+                    <select class="form-control" id="methodFilter">
+                        <option value="">Tất cả</option>
+                        <option value="MoMo">MoMo</option>
+                        <option value="VNPAY">VNPAY</option>
+                        <option value="Stripe">Stripe</option>
+                        <option value="PayPal">PayPal</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Từ ngày</label>
+                    <input type="date" class="form-control" id="startDateFilter">
+                </div>
+                <div class="col-md-3">
+                    <label>Đến ngày</label>
+                    <input type="date" class="form-control" id="endDateFilter">
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button class="btn btn-primary" onclick="filterPayments()">
+                        <i class="fas fa-search"></i> Lọc
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearFilters()">
+                        <i class="fas fa-times"></i> Xóa lọc
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payments Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Danh sách thanh toán</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="paymentsTable">
+                    <thead>
+                        <tr>
+                            <th>Mã giao dịch</th>
+                            <th>Khách hàng</th>
+                            <th>Gói dịch vụ</th>
+                            <th>Số tiền</th>
+                            <th>Phương thức</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var payment in Model)
+                        {
+                            <tr data-status="@payment.Status" data-method="@payment.PaymentMethod" data-date="@payment.CreatedAt.ToString("yyyy-MM-dd")">
+                                <td>
+                                    <strong>@payment.TransactionId</strong>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm me-2">
+                                            <img src="@(string.IsNullOrEmpty(payment.User?.AvatarUrl) ? "/images/default-avatar.png" : payment.User.AvatarUrl)" 
+                                                 alt="Avatar" class="rounded-circle" width="32" height="32">
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">@payment.User?.FullName</div>
+                                            <small class="text-muted">@payment.User?.Email</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">@payment.PaymentMethod</span>
+                                </td>
+                                <td>
+                                    <strong>@payment.Amount.ToString("N0")₫</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(payment.Status.ToString().ToLowerInvariant())">@payment.Status</span>
+                                </td>
+                                <td>
+                                    @payment.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-info" onclick="viewPaymentDetails('@payment.Id')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        @if (payment.Status.ToString() == "Completed")
+                                        {
+                                            <button class="btn btn-sm btn-outline-warning" onclick="refundPayment('@payment.Id')">
+                                                <i class="fas fa-undo"></i>
+                                            </button>
+                                        }
+                                        <button class="btn btn-sm btn-outline-success" onclick="downloadReceipt('@payment.Id')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Details Modal -->
+<div class="modal fade" id="paymentDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chi tiết thanh toán</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="paymentDetailsBody">
+                <!-- Payment details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Refund Confirmation Modal -->
+<div class="modal fade" id="refundModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận hoàn tiền</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn hoàn tiền cho giao dịch này?</p>
+                <div id="refundDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-warning" id="confirmRefund">Hoàn tiền</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let dataTable = null;
+        let currentPaymentId = null;
+
+        $(document).ready(function() {
+            initializeDataTable();
+            loadPaymentStats();
+        });
+
+        function initializeDataTable() {
+            dataTable = $('#paymentsTable').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Vietnamese.json'
+                },
+                responsive: true,
+                pageLength: 25,
+                order: [[6, 'desc']]
+            });
+        }
+
+        function loadPaymentStats() {
+            fetch('/api/payments/stats')
+                .then(response => response.json())
+                .then(data => {
+                    $('#totalRevenue').text(formatCurrency(data.totalRevenue));
+                    $('#successfulPayments').text(data.successfulPayments);
+                    $('#pendingPayments').text(data.pendingPayments);
+                    $('#totalTransactions').text(data.totalTransactions);
+                })
+                .catch(error => console.error('Error loading payment stats:', error));
+        }
+
+        function filterPayments() {
+            const status = $('#statusFilter').val();
+            const method = $('#methodFilter').val();
+            const startDate = $('#startDateFilter').val();
+            const endDate = $('#endDateFilter').val();
+
+            $('#paymentsTable tbody tr').each(function() {
+                let show = true;
+                const $row = $(this);
+                
+                if (status && $row.data('status') !== status) show = false;
+                if (method && $row.data('method') !== method) show = false;
+                if (startDate && $row.data('date') < startDate) show = false;
+                if (endDate && $row.data('date') > endDate) show = false;
+                
+                $row.toggle(show);
+            });
+        }
+
+        function clearFilters() {
+            $('#statusFilter').val('');
+            $('#methodFilter').val('');
+            $('#startDateFilter').val('');
+            $('#endDateFilter').val('');
+            
+            $('#paymentsTable tbody tr').show();
+        }
+
+        function viewPaymentDetails(paymentId) {
+            fetch(`/api/payments/${paymentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const details = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Thông tin giao dịch</h6>
+                                <table class="table table-sm">
+                                    <tr><td>Mã giao dịch:</td><td><strong>${data.transactionId}</strong></td></tr>
+                                    <tr><td>Ngày tạo:</td><td>${new Date(data.createdAt).toLocaleString('vi-VN')}</td></tr>
+                                    <tr><td>Trạng thái:</td><td><span class="payment-status ${data.status.toLowerCase()}">${data.status}</span></td></tr>
+                                    <tr><td>Phương thức:</td><td>${data.paymentMethod}</td></tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Thông tin khách hàng</h6>
+                                <table class="table table-sm">
+                                    <tr><td>Họ tên:</td><td>${data.user.fullName}</td></tr>
+                                    <tr><td>Email:</td><td>${data.user.email}</td></tr>
+                                    <tr><td>Điện thoại:</td><td>${data.user.phone || 'N/A'}</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6>Chi tiết gói dịch vụ</h6>
+                                <table class="table table-sm">
+                                    <tr><td>Gói:</td><td><strong>${data.packageName}</strong></td></tr>
+                                    <tr><td>Số tiền:</td><td><strong>${formatCurrency(data.amount)}</strong></td></tr>
+                                    <tr><td>Thời hạn:</td><td>${data.duration} tháng</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        ${data.status === 'Completed' ? `
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6>Thông tin thanh toán</h6>
+                                <table class="table table-sm">
+                                    <tr><td>Ngày thanh toán:</td><td>${new Date(data.paidAt).toLocaleString('vi-VN')}</td></tr>
+                                    <tr><td>Mã tham chiếu:</td><td>${data.referenceId || 'N/A'}</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        ` : ''}
+                    `;
+                    
+                    $('#paymentDetailsBody').html(details);
+                    $('#paymentDetailsModal').modal('show');
+                })
+                .catch(error => {
+                    console.error('Error loading payment details:', error);
+                    showNotification('Lỗi tải chi tiết thanh toán', 'error');
+                });
+        }
+
+        function refundPayment(paymentId) {
+            currentPaymentId = paymentId;
+            
+            fetch(`/api/payments/${paymentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const refundDetails = `
+                        <div class="alert alert-warning">
+                            <strong>Giao dịch:</strong> ${data.transactionId}<br>
+                            <strong>Số tiền:</strong> ${formatCurrency(data.amount)}<br>
+                            <strong>Khách hàng:</strong> ${data.user.fullName}
+                        </div>
+                    `;
+                    
+                    $('#refundDetails').html(refundDetails);
+                    $('#refundModal').modal('show');
+                })
+                .catch(error => {
+                    console.error('Error loading payment for refund:', error);
+                    showNotification('Lỗi tải thông tin thanh toán', 'error');
+                });
+        }
+
+        $('#confirmRefund').click(function() {
+            if (currentPaymentId) {
+                fetch(`/api/payments/${currentPaymentId}/refund`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Hoàn tiền thành công', 'success');
+                        $('#refundModal').modal('hide');
+                        location.reload();
+                    } else {
+                        showNotification(data.message || 'Lỗi hoàn tiền', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Refund error:', error);
+                    showNotification('Lỗi hoàn tiền', 'error');
+                });
+            }
+        });
+
+        function downloadReceipt(paymentId) {
+            window.open(`/api/payments/${paymentId}/receipt`, '_blank');
+        }
+
+        function createPayment() {
+            window.location.href = '/Payments/Create';
+        }
+
+        function exportPayments() {
+            const status = $('#statusFilter').val();
+            const method = $('#methodFilter').val();
+            const startDate = $('#startDateFilter').val();
+            const endDate = $('#endDateFilter').val();
+
+            const params = new URLSearchParams();
+            if (status) params.append('status', status);
+            if (method) params.append('method', method);
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+
+            window.location.href = `/api/payments/export?${params.toString()}`;
+        }
+
+        // Auto-refresh stats every 30 seconds
+        setInterval(function() {
+            loadPaymentStats();
+        }, 30000);
+    </script>
+} 

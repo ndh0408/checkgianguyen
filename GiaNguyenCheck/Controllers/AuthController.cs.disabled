@@ -1,0 +1,305 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using GiaNguyenCheck.DTOs;
+using GiaNguyenCheck.Interfaces;
+using GiaNguyenCheck.Constants;
+using System.Security.Claims;
+
+namespace GiaNguyenCheck.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class AuthController : ControllerBase
+{
+    private readonly IAuthService _authService;
+    private readonly ILogger<AuthController> _logger;
+
+    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    {
+        _authService = authService;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// User login
+    /// </summary>
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var result = await _authService.LoginAsync(loginDto);
+        
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation("User {Email} logged in successfully", loginDto.Email);
+            return Ok(result);
+        }
+        
+        _logger.LogWarning("Login failed for user {Email}: {Error}", loginDto.Email, result.Message);
+        return Unauthorized(result);
+    }
+
+    /// <summary>
+    /// User registration
+    /// </summary>
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var result = await _authService.RegisterAsync(registerDto);
+        
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation("User {Email} registered successfully", registerDto.Email);
+            return Ok(result);
+        }
+        
+        _logger.LogWarning("Registration failed for user {Email}: {Error}", registerDto.Email, result.Message);
+        return BadRequest(result);
+    }
+
+    /// <summary>
+    /// Change password
+    /// </summary>
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var userId = User.FindFirst(AppConstants.Claims.UserId)?.Value;
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
+        {
+            return Unauthorized("Invalid user");
+        }
+
+        var result = await _authService.ChangePasswordAsync(userGuid, changePasswordDto);
+        
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation("User {UserId} changed password successfully", userGuid);
+            return Ok(result);
+        }
+        
+        _logger.LogWarning("Password change failed for user {UserId}: {Error}", userGuid, result.Message);
+        return BadRequest(result);
+    }
+
+    /// <summary>
+    /// Get current user profile
+    /// </summary>
+    [HttpGet("profile")]
+    [Authorize]
+    public async Task<IActionResult> GetProfile()
+    {
+        var userId = User.FindFirst(AppConstants.Claims.UserId)?.Value;
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
+        {
+            return Unauthorized("Invalid user");
+        }
+
+        var result = await _authService.GetUserProfileAsync(userGuid);
+        
+        if (result.IsSuccess)
+        {
+            return Ok(result);
+        }
+        
+        return BadRequest(result);
+    }
+
+    /// <summary>
+    /// Update user profile
+    /// </summary>
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<IActionResult> UpdateProfile([FromBody] UserDto userDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var userId = User.FindFirst(AppConstants.Claims.UserId)?.Value;
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
+        {
+            return Unauthorized("Invalid user");
+        }
+
+        var result = await _authService.UpdateUserProfileAsync(userGuid, userDto);
+        
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation("User {UserId} updated profile successfully", userGuid);
+            return Ok(result);
+        }
+        
+        return BadRequest(result);
+    }
+
+    /// <summary>
+    /// Forgot password
+    /// </summary>
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto forgotPasswordDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var result = await _authService.ForgotPasswordAsync(forgotPasswordDto.Email);
+        
+        // Always return success for security reasons
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Reset password
+    /// </summary>
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var result = await _authService.ResetPasswordAsync(
+            resetPasswordDto.Email, 
+            resetPasswordDto.Token, 
+            resetPasswordDto.NewPassword);
+        
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation("Password reset successful for user {Email}", resetPasswordDto.Email);
+            return Ok(result);
+        }
+        
+        return BadRequest(result);
+    }
+
+    /// <summary>
+    /// Confirm email
+    /// </summary>
+    [HttpPost("confirm-email")]
+    public async Task<IActionResult> ConfirmEmail([FromQuery] Guid userId, [FromQuery] string token)
+    {
+        if (userId == Guid.Empty || string.IsNullOrEmpty(token))
+        {
+            return BadRequest("Invalid confirmation data");
+        }
+
+        var result = await _authService.ConfirmEmailAsync(userId, token);
+        
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation("Email confirmed successfully for user {UserId}", userId);
+            return Ok(result);
+        }
+        
+        return BadRequest(result);
+    }
+
+    /// <summary>
+    /// Validate token
+    /// </summary>
+    [HttpPost("validate-token")]
+    public async Task<IActionResult> ValidateToken([FromBody] string token)
+    {
+        if (string.IsNullOrEmpty(token))
+        {
+            return BadRequest("Token is required");
+        }
+
+        var isValid = await _authService.ValidateTokenAsync(token);
+        
+        return Ok(new { IsValid = isValid });
+    }
+
+    /// <summary>
+    /// Refresh token
+    /// </summary>
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto refreshTokenDto)
+    {
+        if (string.IsNullOrEmpty(refreshTokenDto.Token))
+        {
+            return BadRequest("Token is required");
+        }
+
+        var principal = await _authService.GetPrincipalFromTokenAsync(refreshTokenDto.Token);
+        if (principal == null)
+        {
+            return Unauthorized("Invalid token");
+        }
+
+        var userId = principal.FindFirst(AppConstants.Claims.UserId)?.Value;
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
+        {
+            return Unauthorized("Invalid user in token");
+        }
+
+        var userResult = await _authService.GetUserProfileAsync(userGuid);
+        if (!userResult.IsSuccess)
+        {
+            return Unauthorized("User not found");
+        }
+
+        // Generate new token by simulating login
+        var loginDto = new LoginDto { Email = userResult.Data.Email, Password = "" };
+        // Note: This is simplified - in reality, you'd need a proper refresh token mechanism
+        
+        return Ok(new { Message = "Token refresh not fully implemented" });
+    }
+
+    /// <summary>
+    /// Logout (client-side token removal)
+    /// </summary>
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout()
+    {
+        var userId = User.FindFirst(AppConstants.Claims.UserId)?.Value;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            _logger.LogInformation("User {UserId} logged out", userId);
+        }
+
+        await Task.CompletedTask;
+        return Ok(new { Message = "Logged out successfully" });
+    }
+
+    /// <summary>
+    /// Get current user info from token
+    /// </summary>
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<IActionResult> GetCurrentUser()
+    {
+        var userInfo = new
+        {
+            UserId = User.FindFirst(AppConstants.Claims.UserId)?.Value,
+            Email = User.FindFirst(ClaimTypes.Email)?.Value,
+            FirstName = User.FindFirst(AppConstants.Claims.FirstName)?.Value,
+            LastName = User.FindFirst(AppConstants.Claims.LastName)?.Value,
+            TenantId = User.FindFirst(AppConstants.Claims.TenantId)?.Value,
+            Role = User.FindFirst(AppConstants.Claims.Role)?.Value,
+            Roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray()
+        };
+
+        await Task.CompletedTask;
+        return Ok(userInfo);
+    }
+} 

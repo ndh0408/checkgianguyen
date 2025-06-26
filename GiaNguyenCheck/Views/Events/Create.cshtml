@@ -1,0 +1,217 @@
+@model GiaNguyenCheck.Entities.Event
+@{
+    ViewData["Title"] = "Tạo sự kiện mới";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-plus-circle text-primary"></i> Tạo sự kiện mới
+        </h1>
+        <a href="/Events" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Thông tin sự kiện</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Name" class="form-label">Tên sự kiện <span class="text-danger">*</span></label>
+                                    <input asp-for="Name" class="form-control" placeholder="Nhập tên sự kiện" required />
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Location" class="form-label">Địa điểm <span class="text-danger">*</span></label>
+                                    <input asp-for="Location" class="form-control" placeholder="Nhập địa điểm" required />
+                                    <span asp-validation-for="Location" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Description" class="form-label">Mô tả</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="Mô tả chi tiết về sự kiện"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="StartTime" class="form-label">Thời gian bắt đầu <span class="text-danger">*</span></label>
+                                    <input asp-for="StartTime" type="datetime-local" class="form-control" required />
+                                    <span asp-validation-for="StartTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="EndTime" class="form-label">Thời gian kết thúc <span class="text-danger">*</span></label>
+                                    <input asp-for="EndTime" type="datetime-local" class="form-control" required />
+                                    <span asp-validation-for="EndTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="CheckInStartTime" class="form-label">Bắt đầu check-in</label>
+                                    <input asp-for="CheckInStartTime" type="datetime-local" class="form-control" />
+                                    <span asp-validation-for="CheckInStartTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="CheckInEndTime" class="form-label">Kết thúc check-in</label>
+                                    <input asp-for="CheckInEndTime" type="datetime-local" class="form-control" />
+                                    <span asp-validation-for="CheckInEndTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="MaxGuests" class="form-label">Số lượng khách tối đa</label>
+                                    <input asp-for="MaxGuests" type="number" class="form-control" min="1" />
+                                    <span asp-validation-for="MaxGuests" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="OrganizerName" class="form-label">Tên người tổ chức</label>
+                                    <input asp-for="OrganizerName" class="form-control" placeholder="Tên người tổ chức" />
+                                    <span asp-validation-for="OrganizerName" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="OrganizerPhone" class="form-label">Số điện thoại</label>
+                                    <input asp-for="OrganizerPhone" class="form-control" placeholder="Số điện thoại" />
+                                    <span asp-validation-for="OrganizerPhone" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="OrganizerEmail" class="form-label">Email</label>
+                                    <input asp-for="OrganizerEmail" type="email" class="form-control" placeholder="Email" />
+                                    <span asp-validation-for="OrganizerEmail" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Ảnh sự kiện</label>
+                                    <input type="file" name="eventImage" class="form-control" accept="image/*" />
+                                    <small class="form-text text-muted">Hỗ trợ: JPG, PNG, GIF (tối đa 5MB)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Cài đặt</label>
+                                    <div class="form-check">
+                                        <input asp-for="IsPublic" class="form-check-input" type="checkbox" />
+                                        <label asp-for="IsPublic" class="form-check-label">Sự kiện công khai</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input asp-for="AllowMultipleCheckIn" class="form-check-input" type="checkbox" />
+                                        <label asp-for="AllowMultipleCheckIn" class="form-check-label">Cho phép check-in nhiều lần</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Tạo sự kiện
+                            </button>
+                            <a href="/Events" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Hướng dẫn</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Lưu ý khi tạo sự kiện:</h6>
+                        <ul class="mb-0">
+                            <li>Tên sự kiện nên ngắn gọn, dễ hiểu</li>
+                            <li>Địa điểm cần chính xác và đầy đủ</li>
+                            <li>Thời gian check-in nên sớm hơn thời gian bắt đầu 30-60 phút</li>
+                            <li>Số lượng khách tối đa giúp quản lý tốt hơn</li>
+                            <li>Ảnh sự kiện nên có tỷ lệ 16:9 để hiển thị đẹp</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Auto-set check-in times based on event times
+            $('#StartTime').change(function() {
+                const startTime = new Date($(this).val());
+                const checkInStart = new Date(startTime.getTime() - (60 * 60 * 1000)); // 1 hour before
+                
+                if (!$('#CheckInStartTime').val()) {
+                    $('#CheckInStartTime').val(checkInStart.toISOString().slice(0, 16));
+                }
+            });
+
+            $('#EndTime').change(function() {
+                const endTime = new Date($(this).val());
+                const checkInEnd = new Date(endTime.getTime() + (30 * 60 * 1000)); // 30 minutes after
+                
+                if (!$('#CheckInEndTime').val()) {
+                    $('#CheckInEndTime').val(checkInEnd.toISOString().slice(0, 16));
+                }
+            });
+
+            // Form validation
+            $('form').submit(function(e) {
+                const startTime = new Date($('#StartTime').val());
+                const endTime = new Date($('#EndTime').val());
+                
+                if (endTime <= startTime) {
+                    e.preventDefault();
+                    showNotification('Thời gian kết thúc phải sau thời gian bắt đầu', 'error');
+                    return false;
+                }
+                
+                const checkInStart = new Date($('#CheckInStartTime').val());
+                const checkInEnd = new Date($('#CheckInEndTime').val());
+                
+                if (checkInStart && checkInEnd && checkInEnd <= checkInStart) {
+                    e.preventDefault();
+                    showNotification('Thời gian kết thúc check-in phải sau thời gian bắt đầu check-in', 'error');
+                    return false;
+                }
+            });
+        });
+    </script>
+} 

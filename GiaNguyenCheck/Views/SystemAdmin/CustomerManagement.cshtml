@@ -1,0 +1,443 @@
+@model GiaNguyenCheck.Controllers.SystemAdminController.CustomerManagementViewModel
+@{
+    ViewData["Title"] = "Customer Management";
+    ViewData["Role"] = "SystemAdmin";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fa fa-users text-primary"></i> Customer Management</h2>
+    <div class="btn-group">
+        <button class="btn btn-outline-primary" onclick="exportCustomers()">
+            <i class="fa fa-download"></i> Xuất Excel
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCustomerModal">
+            <i class="fa fa-plus"></i> Tạo khách hàng mới
+        </button>
+    </div>
+</div>
+
+<!-- Subscription Overview Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Free Plan</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.SubscriptionOverview.FreeCount</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-user fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Basic Plan</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.SubscriptionOverview.BasicCount</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-star fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Pro Plan</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.SubscriptionOverview.ProCount</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-crown fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Enterprise</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.SubscriptionOverview.EnterpriseCount</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fa fa-building fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Approvals -->
+@if (Model.PendingApprovals.Any())
+{
+    <div class="card mb-4 border-warning">
+        <div class="card-header bg-warning text-white">
+            <h6 class="m-0 font-weight-bold">
+                <i class="fa fa-clock"></i> Pending Approvals (@Model.PendingApprovals.Count)
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Công ty</th>
+                            <th>Email</th>
+                            <th>Gói yêu cầu</th>
+                            <th>Ngày đăng ký</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pending in Model.PendingApprovals)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@pending.Name</strong>
+                                    <br><small class="text-muted">@pending.Subdomain</small>
+                                </td>
+                                <td>@pending.AdminEmail</td>
+                                <td>
+                                    <span class="badge @GetPlanBadgeClass(pending.Plan?.Name)">
+                                        @pending.Plan?.Name
+                                    </span>
+                                </td>
+                                <td>@pending.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-success" onclick="approveCustomer('@pending.Id')">
+                                            <i class="fa fa-check"></i> Approve
+                                        </button>
+                                        <button class="btn btn-danger" onclick="rejectCustomer('@pending.Id')">
+                                            <i class="fa fa-times"></i> Reject
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- All Customers -->
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">All Customers</h6>
+    </div>
+    <div class="card-body">
+        <!-- Filters -->
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm...">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="planFilter">
+                    <option value="">Tất cả gói</option>
+                    <option value="Free">Free</option>
+                    <option value="Basic">Basic</option>
+                    <option value="Pro">Pro</option>
+                    <option value="Enterprise">Enterprise</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="statusFilter">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="true">Hoạt động</option>
+                    <option value="false">Tạm khóa</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-secondary w-100" onclick="filterCustomers()">
+                    <i class="fa fa-filter"></i> Lọc
+                </button>
+            </div>
+            <div class="col-md-3">
+                <div class="btn-group w-100">
+                    <button class="btn btn-outline-primary" onclick="refreshTable()">
+                        <i class="fa fa-refresh"></i>
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportCustomers()">
+                        <i class="fa fa-download"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customers Table -->
+        <div class="table-responsive">
+            <table class="table table-striped" id="customersTable">
+                <thead>
+                    <tr>
+                        <th>Logo</th>
+                        <th>Thông tin công ty</th>
+                        <th>Gói dịch vụ</th>
+                        <th>Người dùng</th>
+                        <th>Ngày tạo</th>
+                        <th>Trạng thái</th>
+                        <th>Doanh thu</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var customer in Model.AllCustomers)
+                    {
+                        <tr>
+                            <td>
+                                <img src="@(string.IsNullOrEmpty(customer.LogoUrl) ? "/images/default-logo.png" : customer.LogoUrl)" 
+                                     alt="Logo" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
+                            </td>
+                            <td>
+                                <strong>@customer.Name</strong>
+                                <br><small class="text-muted">@customer.Subdomain.gianguyencheck.com</small>
+                                <br><small class="text-muted">@customer.AdminEmail</small>
+                            </td>
+                            <td>
+                                <span class="badge @GetPlanBadgeClass(customer.Plan?.Name)">
+                                    @customer.Plan?.Name
+                                </span>
+                                <br><small class="text-muted">@customer.Plan?.Price?.ToString("N0") VNĐ/tháng</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">@(customer.Users?.Count ?? 0) users</span>
+                            </td>
+                            <td>@customer.CreatedAt.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <span class="badge @(customer.IsActive ? "bg-success" : "bg-danger")">
+                                    @(customer.IsActive ? "Hoạt động" : "Tạm khóa")
+                                </span>
+                            </td>
+                            <td>
+                                <strong>@(customer.Plan?.Price?.ToString("N0") ?? "0") VNĐ</strong>
+                                <br><small class="text-muted">@customer.Plan?.BillingCycle</small>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewCustomer('@customer.Id')">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editCustomer('@customer.Id')">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning" onclick="toggleCustomerStatus('@customer.Id', @customer.IsActive.ToString().ToLower())">
+                                        <i class="fa @(customer.IsActive ? "fa-pause" : "fa-play")"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCustomer('@customer.Id')">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Create Customer Modal -->
+<div class="modal fade" id="createCustomerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tạo khách hàng mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateCustomer" method="post">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tên công ty *</label>
+                                <input type="text" class="form-control" name="Name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Subdomain *</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="Subdomain" required>
+                                    <span class="input-group-text">.gianguyencheck.com</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Email admin *</label>
+                                <input type="email" class="form-control" name="AdminEmail" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Gói dịch vụ *</label>
+                                <select class="form-select" name="PlanId" required>
+                                    <option value="">Chọn gói</option>
+                                    <option value="free">Free</option>
+                                    <option value="basic">Basic</option>
+                                    <option value="pro">Pro</option>
+                                    <option value="enterprise">Enterprise</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mô tả</label>
+                        <textarea class="form-control" name="Description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Tạo khách hàng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterCustomers() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const plan = document.getElementById('planFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            const rows = document.querySelectorAll('#customersTable tbody tr');
+            
+            rows.forEach(row => {
+                const name = row.cells[1].textContent.toLowerCase();
+                const planText = row.cells[2].textContent;
+                const statusText = row.cells[5].textContent;
+                
+                const matchSearch = name.includes(search);
+                const matchPlan = !plan || planText.includes(plan);
+                const matchStatus = !status || (status === 'true' && statusText.includes('Hoạt động')) || 
+                                   (status === 'false' && statusText.includes('Tạm khóa'));
+                
+                row.style.display = matchSearch && matchPlan && matchStatus ? '' : 'none';
+            });
+        }
+
+        function approveCustomer(id) {
+            if (confirm('Bạn có chắc muốn phê duyệt khách hàng này?')) {
+                fetch(`/SystemAdmin/ApproveTenant`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tenantId: id })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Có lỗi xảy ra!');
+                    }
+                });
+            }
+        }
+
+        function rejectCustomer(id) {
+            if (confirm('Bạn có chắc muốn từ chối khách hàng này?')) {
+                fetch(`/SystemAdmin/RejectTenant`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tenantId: id })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Có lỗi xảy ra!');
+                    }
+                });
+            }
+        }
+
+        function viewCustomer(id) {
+            window.location.href = `/SystemAdmin/CustomerManagement/Details/${id}`;
+        }
+
+        function editCustomer(id) {
+            window.location.href = `/SystemAdmin/CustomerManagement/Edit/${id}`;
+        }
+
+        function toggleCustomerStatus(id, currentStatus) {
+            const action = currentStatus === 'true' ? 'Tạm khóa' : 'Kích hoạt';
+            if (confirm(`Bạn có chắc muốn ${action.toLowerCase()} khách hàng này?`)) {
+                fetch(`/SystemAdmin/ToggleCustomerStatus`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tenantId: id })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Có lỗi xảy ra!');
+                    }
+                });
+            }
+        }
+
+        function deleteCustomer(id) {
+            if (confirm('Bạn có chắc muốn xóa khách hàng này? Hành động này không thể hoàn tác!')) {
+                fetch(`/SystemAdmin/DeleteCustomer`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tenantId: id })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Có lỗi xảy ra!');
+                    }
+                });
+            }
+        }
+
+        function exportCustomers() {
+            window.location.href = '/SystemAdmin/ExportCustomers';
+        }
+
+        function refreshTable() {
+            location.reload();
+        }
+    </script>
+}
+
+@functions {
+    private string GetPlanBadgeClass(string? planName)
+    {
+        return planName?.ToLower() switch
+        {
+            "free" => "bg-secondary",
+            "basic" => "bg-primary",
+            "pro" => "bg-warning",
+            "enterprise" => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+} 

@@ -1,0 +1,478 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using GiaNguyenCheck.DTOs;
+using GiaNguyenCheck.Entities;
+using GiaNguyenCheck.Interfaces;
+using GiaNguyenCheck.Constants;
+using System.Security.Claims;
+
+namespace GiaNguyenCheck.Controllers
+{
+    /// <summary>
+    /// Controller cho quản lý sự kiện
+    /// </summary>
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class EventsController : ControllerBase
+    {
+        private readonly IEventRepository _eventRepository;
+        private readonly IGuestRepository _guestRepository;
+        private readonly ICheckInRepository _checkInRepository;
+        private readonly ITenantProvider _tenantProvider;
+        private readonly IServiceLimitService _serviceLimitService;
+        private readonly ILogger<EventsController> _logger;
+
+        public EventsController(
+            IEventRepository eventRepository,
+            IGuestRepository guestRepository,
+            ICheckInRepository checkInRepository,
+            ITenantProvider tenantProvider,
+            IServiceLimitService serviceLimitService,
+            ILogger<EventsController> logger)
+        {
+            _eventRepository = eventRepository;
+            _guestRepository = guestRepository;
+            _checkInRepository = checkInRepository;
+            _tenantProvider = tenantProvider;
+            _serviceLimitService = serviceLimitService;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Lấy danh sách sự kiện của tenant
+        /// </summary>
+        [HttpGet]
+        [Authorize(Policy = AppConstants.Policies.RequireViewer)]
+        public async Task<ActionResult<ApiResponse<PagedResultDto<EventDto>>>> GetEvents(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] EventStatus? status = null,
+            [FromQuery] string? search = null)
+        {
+            try
+            {
+                var tenantId = _tenantProvider.GetTenantId();
+                if (!tenantId.HasValue)
+                {
+                    return BadRequest(ApiResponse<PagedResultDto<EventDto>>.ErrorResult("Tenant không hợp lệ"));
+                }
+
+                var events = await _eventRepository.GetByTenantIdAsync(tenantId.Value);
+                
+                // Filter theo status
+                if (status.HasValue)
+                {
+                    events = events.Where(e => e.Status == status.Value);
+                }
+
+                // Filter theo search
+                if (!string.IsNullOrEmpty(search))
+                {
+                    events = events.Where(e => e.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                                             (e.Description != null && e.Description.Contains(search, StringComparison.OrdinalIgnoreCase)));
+                }
+
+                var totalCount = events.Count();
+                var pagedEvents = events
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(e => new EventDto
+                    {
+                        Id = e.Id,
+                        Name = e.Name,
+                        Description = e.Description,
+                        Location = e.Location,
+                        StartTime = e.StartTime,
+                        EndTime = e.EndTime,
+                        CheckInStartTime = e.CheckInStartTime,
+                        CheckInEndTime = e.CheckInEndTime,
+                        BannerImageUrl = e.BannerImageUrl,
+                        Status = e.Status,
+                        MaxAttendees = e.MaxAttendees,
+                        AllowMultipleCheckIn = e.AllowMultipleCheckIn,
+                        TenantId = e.TenantId,
+                        CreatedByUserId = e.CreatedByUserId,
+                        CreatedAt = e.CreatedAt,
+                        CreatedByUserName = $"{e.CreatedByUser?.FirstName} {e.CreatedByUser?.LastName}".Trim()
+                    })
+                    .ToList();
+
+                // Thêm thống kê cho mỗi sự kiện
+                foreach (var eventDto in pagedEvents)
+                {
+                    var totalGuests = await _guestRepository.GetTotalGuestsCountAsync(eventDto.Id);
+                    var checkedInCount = await _guestRepository.GetCheckedInCountAsync(eventDto.Id);
+                    
+                    eventDto.TotalGuests = totalGuests;
+                    eventDto.TotalCheckedIn = checkedInCount;
+                }
+
+                var result = new PagedResultDto<EventDto>
+                {
+                    Items = pagedEvents,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
+                };
+
+                return Ok(ApiResponse<PagedResultDto<EventDto>>.SuccessResult(result));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy danh sách sự kiện");
+                return StatusCode(500, ApiResponse<PagedResultDto<EventDto>>.ErrorResult("Lỗi server"));
+            }
+        }
+
+        /// <summary>
+        /// Lấy thông tin chi tiết sự kiện
+        /// </summary>
+        [HttpGet("{id}")]
+        [Authorize(Policy = AppConstants.Policies.RequireViewer)]
+        public async Task<ActionResult<ApiResponse<EventDto>>> GetEvent(Guid id)
+        {
+            try
+            {
+                var eventEntity = await _eventRepository.GetByIdAsync(id);
+                if (eventEntity == null)
+                {
+                    return NotFound(ApiResponse<EventDto>.ErrorResult("Sự kiện không tồn tại"));
+                }
+
+                // Kiểm tra quyền truy cập
+                var tenantId = _tenantProvider.GetTenantId();
+                if (eventEntity.TenantId != tenantId)
+                {
+                    return Forbid();
+                }
+
+                var eventDto = new EventDto
+                {
+                    Id = eventEntity.Id,
+                    Name = eventEntity.Name,
+                    Description = eventEntity.Description,
+                    Location = eventEntity.Location,
+                    StartTime = eventEntity.StartTime,
+                    EndTime = eventEntity.EndTime,
+                    CheckInStartTime = eventEntity.CheckInStartTime,
+                    CheckInEndTime = eventEntity.CheckInEndTime,
+                    BannerImageUrl = eventEntity.BannerImageUrl,
+                    Status = eventEntity.Status,
+                    MaxAttendees = eventEntity.MaxAttendees,
+                    AllowMultipleCheckIn = eventEntity.AllowMultipleCheckIn,
+                    TenantId = eventEntity.TenantId,
+                    CreatedByUserId = eventEntity.CreatedByUserId,
+                    CreatedAt = eventEntity.CreatedAt,
+                    CreatedByUserName = $"{eventEntity.CreatedByUser?.FirstName} {eventEntity.CreatedByUser?.LastName}".Trim()
+                };
+
+                // Thêm thống kê
+                eventDto.TotalGuests = await _guestRepository.GetTotalGuestsCountAsync(eventEntity.Id);
+                eventDto.TotalCheckedIn = await _guestRepository.GetCheckedInCountAsync(eventEntity.Id);
+
+                return Ok(ApiResponse<EventDto>.SuccessResult(eventDto));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy thông tin sự kiện {EventId}", id);
+                return StatusCode(500, ApiResponse<EventDto>.ErrorResult("Lỗi server"));
+            }
+        }
+
+        /// <summary>
+        /// Tạo sự kiện mới
+        /// </summary>
+        [HttpPost]
+        [Authorize(Policy = AppConstants.Policies.RequireEventManager)]
+        public async Task<ActionResult<ApiResponse<EventDto>>> CreateEvent([FromBody] CreateUpdateEventDto dto)
+        {
+            try
+            {
+                var tenantId = _tenantProvider.GetTenantId();
+                if (!tenantId.HasValue)
+                {
+                    return BadRequest(ApiResponse<EventDto>.ErrorResult("Tenant không hợp lệ"));
+                }
+
+                var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+
+                // Kiểm tra giới hạn tạo sự kiện
+                var canCreateResult = await _serviceLimitService.CanCreateEventAsync(tenantId.Value);
+                if (!canCreateResult.Success || !canCreateResult.Data)
+                {
+                    return BadRequest(ApiResponse<EventDto>.ErrorResult("Đã đạt giới hạn số sự kiện cho gói dịch vụ hiện tại"));
+                }
+
+                var eventEntity = new Event
+                {
+                    Id = Guid.NewGuid(),
+                    Name = dto.Name,
+                    Description = dto.Description,
+                    Location = dto.Location,
+                    StartTime = dto.StartTime,
+                    EndTime = dto.EndTime,
+                    CheckInStartTime = dto.CheckInStartTime,
+                    CheckInEndTime = dto.CheckInEndTime,
+                    BannerImageUrl = dto.BannerImageUrl,
+                    MaxAttendees = dto.MaxAttendees,
+                    AllowMultipleCheckIn = dto.AllowMultipleCheckIn,
+                    Status = EventStatus.Draft,
+                    TenantId = tenantId.Value,
+                    CreatedByUserId = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                await _eventRepository.AddAsync(eventEntity);
+
+                var eventDto = new EventDto
+                {
+                    Id = eventEntity.Id,
+                    Name = eventEntity.Name,
+                    Description = eventEntity.Description,
+                    Location = eventEntity.Location,
+                    StartTime = eventEntity.StartTime,
+                    EndTime = eventEntity.EndTime,
+                    CheckInStartTime = eventEntity.CheckInStartTime,
+                    CheckInEndTime = eventEntity.CheckInEndTime,
+                    BannerImageUrl = eventEntity.BannerImageUrl,
+                    Status = eventEntity.Status,
+                    MaxAttendees = eventEntity.MaxAttendees,
+                    AllowMultipleCheckIn = eventEntity.AllowMultipleCheckIn,
+                    TenantId = eventEntity.TenantId,
+                    CreatedByUserId = eventEntity.CreatedByUserId,
+                    CreatedAt = eventEntity.CreatedAt,
+                    TotalGuests = 0,
+                    TotalCheckedIn = 0
+                };
+
+                return CreatedAtAction(nameof(GetEvent), new { id = eventEntity.Id }, 
+                    ApiResponse<EventDto>.SuccessResult(eventDto, "Tạo sự kiện thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tạo sự kiện");
+                return StatusCode(500, ApiResponse<EventDto>.ErrorResult("Lỗi server"));
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật thông tin sự kiện
+        /// </summary>
+        [HttpPut("{id}")]
+        [Authorize(Policy = AppConstants.Policies.RequireEventManager)]
+        public async Task<ActionResult<ApiResponse<EventDto>>> UpdateEvent(Guid id, [FromBody] CreateUpdateEventDto dto)
+        {
+            try
+            {
+                var eventEntity = await _eventRepository.GetByIdAsync(id);
+                if (eventEntity == null)
+                {
+                    return NotFound(ApiResponse<EventDto>.ErrorResult("Sự kiện không tồn tại"));
+                }
+
+                // Kiểm tra quyền truy cập
+                var tenantId = _tenantProvider.GetTenantId();
+                if (eventEntity.TenantId != tenantId)
+                {
+                    return Forbid();
+                }
+
+                // Cập nhật thông tin
+                eventEntity.Name = dto.Name;
+                eventEntity.Description = dto.Description;
+                eventEntity.Location = dto.Location;
+                eventEntity.StartTime = dto.StartTime;
+                eventEntity.EndTime = dto.EndTime;
+                eventEntity.CheckInStartTime = dto.CheckInStartTime;
+                eventEntity.CheckInEndTime = dto.CheckInEndTime;
+                eventEntity.BannerImageUrl = dto.BannerImageUrl;
+                eventEntity.MaxAttendees = dto.MaxAttendees;
+                eventEntity.AllowMultipleCheckIn = dto.AllowMultipleCheckIn;
+                eventEntity.UpdatedAt = DateTime.UtcNow;
+
+                await _eventRepository.UpdateAsync(eventEntity);
+
+                var eventDto = new EventDto
+                {
+                    Id = eventEntity.Id,
+                    Name = eventEntity.Name,
+                    Description = eventEntity.Description,
+                    Location = eventEntity.Location,
+                    StartTime = eventEntity.StartTime,
+                    EndTime = eventEntity.EndTime,
+                    CheckInStartTime = eventEntity.CheckInStartTime,
+                    CheckInEndTime = eventEntity.CheckInEndTime,
+                    BannerImageUrl = eventEntity.BannerImageUrl,
+                    Status = eventEntity.Status,
+                    MaxAttendees = eventEntity.MaxAttendees,
+                    AllowMultipleCheckIn = eventEntity.AllowMultipleCheckIn,
+                    TenantId = eventEntity.TenantId,
+                    CreatedByUserId = eventEntity.CreatedByUserId,
+                    CreatedAt = eventEntity.CreatedAt
+                };
+
+                // Thêm thống kê
+                eventDto.TotalGuests = await _guestRepository.GetTotalGuestsCountAsync(eventEntity.Id);
+                eventDto.TotalCheckedIn = await _guestRepository.GetCheckedInCountAsync(eventEntity.Id);
+
+                return Ok(ApiResponse<EventDto>.SuccessResult(eventDto, "Cập nhật sự kiện thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi cập nhật sự kiện {EventId}", id);
+                return StatusCode(500, ApiResponse<EventDto>.ErrorResult("Lỗi server"));
+            }
+        }
+
+        /// <summary>
+        /// Xóa sự kiện
+        /// </summary>
+        [HttpDelete("{id}")]
+        [Authorize(Policy = AppConstants.Policies.RequireEventManager)]
+        public async Task<ActionResult<ApiResponse<bool>>> DeleteEvent(Guid id)
+        {
+            try
+            {
+                var eventEntity = await _eventRepository.GetByIdAsync(id);
+                if (eventEntity == null)
+                {
+                    return NotFound(ApiResponse<bool>.ErrorResult("Sự kiện không tồn tại"));
+                }
+
+                // Kiểm tra quyền truy cập
+                var tenantId = _tenantProvider.GetTenantId();
+                if (eventEntity.TenantId != tenantId)
+                {
+                    return Forbid();
+                }
+
+                // Kiểm tra xem sự kiện có thể xóa không (không có check-in nào)
+                var checkInCount = await _checkInRepository.GetTotalCheckInsCountAsync(id);
+                if (checkInCount > 0)
+                {
+                    return BadRequest(ApiResponse<bool>.ErrorResult("Không thể xóa sự kiện đã có check-in"));
+                }
+
+                await _eventRepository.DeleteAsync(id);
+
+                return Ok(ApiResponse<bool>.SuccessResult(true, "Xóa sự kiện thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi xóa sự kiện {EventId}", id);
+                return StatusCode(500, ApiResponse<bool>.ErrorResult("Lỗi server"));
+            }
+        }
+
+        /// <summary>
+        /// Publish sự kiện (chuyển từ Draft sang Published)
+        /// </summary>
+        [HttpPost("{id}/publish")]
+        [Authorize(Policy = AppConstants.Policies.RequireEventManager)]
+        public async Task<ActionResult<ApiResponse<bool>>> PublishEvent(Guid id)
+        {
+            try
+            {
+                var eventEntity = await _eventRepository.GetByIdAsync(id);
+                if (eventEntity == null)
+                {
+                    return NotFound(ApiResponse<bool>.ErrorResult("Sự kiện không tồn tại"));
+                }
+
+                // Kiểm tra quyền truy cập
+                var tenantId = _tenantProvider.GetTenantId();
+                if (eventEntity.TenantId != tenantId)
+                {
+                    return Forbid();
+                }
+
+                if (eventEntity.Status != EventStatus.Draft)
+                {
+                    return BadRequest(ApiResponse<bool>.ErrorResult("Chỉ có thể publish sự kiện ở trạng thái Draft"));
+                }
+
+                eventEntity.Status = EventStatus.Published;
+                eventEntity.UpdatedAt = DateTime.UtcNow;
+
+                await _eventRepository.UpdateAsync(eventEntity);
+
+                return Ok(ApiResponse<bool>.SuccessResult(true, "Publish sự kiện thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi publish sự kiện {EventId}", id);
+                return StatusCode(500, ApiResponse<bool>.ErrorResult("Lỗi server"));
+            }
+        }
+
+        /// <summary>
+        /// Lấy thống kê sự kiện
+        /// </summary>
+        [HttpGet("{id}/stats")]
+        [Authorize(Policy = AppConstants.Policies.RequireViewer)]
+        public async Task<ActionResult<ApiResponse<EventStatsDto>>> GetEventStats(Guid id)
+        {
+            try
+            {
+                var eventEntity = await _eventRepository.GetByIdAsync(id);
+                if (eventEntity == null)
+                {
+                    return NotFound(ApiResponse<EventStatsDto>.ErrorResult("Sự kiện không tồn tại"));
+                }
+
+                // Kiểm tra quyền truy cập
+                var tenantId = _tenantProvider.GetTenantId();
+                if (eventEntity.TenantId != tenantId)
+                {
+                    return Forbid();
+                }
+
+                var totalGuests = await _guestRepository.GetTotalGuestsCountAsync(id);
+                var checkedInCount = await _guestRepository.GetCheckedInCountAsync(id);
+                var vipGuests = (await _guestRepository.GetByTypeAsync(id, GuestType.VIP)).Count();
+                var regularGuests = (await _guestRepository.GetByTypeAsync(id, GuestType.Regular)).Count();
+
+                var checkIns = await _checkInRepository.GetByEventIdAsync(id);
+                var vipCheckIns = checkIns.Count(ci => ci.Guest?.Type == GuestType.VIP);
+                var regularCheckIns = checkIns.Count(ci => ci.Guest?.Type == GuestType.Regular);
+
+                var checkInsByHour = checkIns
+                    .Where(ci => ci.CheckInTime.HasValue)
+                    .GroupBy(ci => ci.CheckInTime!.Value.Hour)
+                    .ToDictionary(g => g.Key.ToString("D2") + ":00", g => g.Count());
+
+                var stats = new EventStatsDto
+                {
+                    EventId = id,
+                    EventName = eventEntity.Name,
+                    TotalGuests = totalGuests,
+                    TotalCheckedIn = checkedInCount,
+                    TotalCheckedOut = checkIns.Count(ci => ci.CheckOutTime.HasValue),
+                    VipGuests = vipGuests,
+                    RegularGuests = regularGuests,
+                    VipCheckedIn = vipCheckIns,
+                    RegularCheckedIn = regularCheckIns,
+                    LastCheckInTime = checkIns.Where(ci => ci.CheckInTime.HasValue)
+                                             .OrderByDescending(ci => ci.CheckInTime)
+                                             .FirstOrDefault()?.CheckInTime,
+                    CheckInsByHour = checkInsByHour,
+                    CheckInsByType = new Dictionary<string, int>
+                    {
+                        { "VIP", vipCheckIns },
+                        { "Regular", regularCheckIns }
+                    }
+                };
+
+                return Ok(ApiResponse<EventStatsDto>.SuccessResult(stats));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy thống kê sự kiện {EventId}", id);
+                return StatusCode(500, ApiResponse<EventStatsDto>.ErrorResult("Lỗi server"));
+            }
+        }
+    }
+} 

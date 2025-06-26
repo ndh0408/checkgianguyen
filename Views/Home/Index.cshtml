@@ -1,0 +1,248 @@
+@{
+    ViewData["Title"] = "Hệ thống Check-in QR cho Sự kiện";
+}
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">
+                    Quản lý Check-in Sự kiện 
+                    <span class="text-warning">Dễ dàng</span> với QR Code
+                </h1>
+                <p class="lead mb-4">
+                    Hệ thống SaaS hiện đại giúp bạn tạo, quản lý và theo dõi check-in sự kiện 
+                    một cách chuyên nghiệp với công nghệ mã QR và thống kê real-time.
+                </p>
+                <div class="d-flex gap-3 mb-4">
+                    <button class="btn btn-light btn-lg px-4" data-bs-toggle="modal" data-bs-target="#registerModal">
+                        <i class="bi bi-rocket-takeoff me-2"></i>
+                        Dùng thử miễn phí
+                    </button>
+                    <button class="btn btn-outline-light btn-lg px-4">
+                        <i class="bi bi-play-circle me-2"></i>
+                        Xem demo
+                    </button>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="me-4">
+                        <i class="bi bi-check-circle-fill text-warning me-2"></i>
+                        <small>Không cần thẻ tín dụng</small>
+                    </div>
+                    <div class="me-4">
+                        <i class="bi bi-check-circle-fill text-warning me-2"></i>
+                        <small>Thiết lập trong 5 phút</small>
+                    </div>
+                    <div>
+                        <i class="bi bi-check-circle-fill text-warning me-2"></i>
+                        <small>Hỗ trợ 24/7</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <div class="bg-white rounded-3 shadow-lg p-4 d-inline-block">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-qr-code display-4 text-primary mb-2"></i>
+                                        <h6 class="card-title text-dark">QR Check-in</h6>
+                                        <small class="text-muted">Scan & Go</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-graph-up-arrow display-4 text-success mb-2"></i>
+                                        <h6 class="card-title text-dark">Real-time</h6>
+                                        <small class="text-muted">Thống kê trực tiếp</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-envelope-at display-4 text-info mb-2"></i>
+                                        <h6 class="card-title text-dark">Email</h6>
+                                        <small class="text-muted">Gửi vé tự động</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-shield-check display-4 text-warning mb-2"></i>
+                                        <h6 class="card-title text-dark">Bảo mật</h6>
+                                        <small class="text-muted">Mã hóa AES</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Preview -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3">Tại sao chọn GiaNguyenCheck?</h2>
+            <p class="text-muted">Giải pháp hoàn chỉnh cho mọi loại sự kiện từ nhỏ đến lớn</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card feature-card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-lightning-charge-fill text-primary fs-1"></i>
+                        </div>
+                        <h5 class="card-title">Thiết lập nhanh chóng</h5>
+                        <p class="card-text text-muted">Tạo sự kiện và gửi vé mời chỉ trong vài phút. Không cần kiến thức kỹ thuật.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card feature-card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-people-fill text-success fs-1"></i>
+                        </div>
+                        <h5 class="card-title">Đa thiết bị</h5>
+                        <p class="card-text text-muted">Hỗ trợ nhiều thiết bị check-in cùng lúc. Hoạt động offline và đồng bộ tự động.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card feature-card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-bar-chart-fill text-info fs-1"></i>
+                        </div>
+                        <h5 class="card-title">Thống kê chi tiết</h5>
+                        <p class="card-text text-muted">Báo cáo real-time, xuất Excel/PDF, phân tích xu hướng check-in theo giờ.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="bg-light py-5">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <h2 class="display-4 fw-bold text-primary">1000+</h2>
+                    <p class="text-muted">Sự kiện đã tổ chức</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <h2 class="display-4 fw-bold text-success">50K+</h2>
+                    <p class="text-muted">Lượt check-in</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <h2 class="display-4 fw-bold text-info">200+</h2>
+                    <p class="text-muted">Khách hàng tin dùng</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <h2 class="display-4 fw-bold text-warning">99.9%</h2>
+                    <p class="text-muted">Thời gian hoạt động</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Preview -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3">Bảng giá linh hoạt</h2>
+            <p class="text-muted">Chọn gói phù hợp với quy mô sự kiện của bạn</p>
+        </div>
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="card pricing-card border shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <h5 class="card-title">FREE</h5>
+                        <div class="mb-3">
+                            <span class="display-4 fw-bold">0đ</span>
+                            <span class="text-muted">/tháng</span>
+                        </div>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>1 sự kiện</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>50 khách mời</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>QR check-in cơ bản</li>
+                            <li class="mb-2"><i class="bi bi-x text-danger me-2"></i>Báo cáo chi tiết</li>
+                        </ul>
+                        <button class="btn btn-outline-primary w-100">Bắt đầu miễn phí</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card pricing-card featured border shadow-lg h-100">
+                    <div class="badge-featured">Phổ biến</div>
+                    <div class="card-body text-center p-4">
+                        <h5 class="card-title">BASIC</h5>
+                        <div class="mb-3">
+                            <span class="display-4 fw-bold">299K</span>
+                            <span class="text-muted">/tháng</span>
+                        </div>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>5 sự kiện</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>1,000 khách mời</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Báo cáo chi tiết</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Email tự động</li>
+                        </ul>
+                        <button class="btn btn-primary w-100">Chọn gói này</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card pricing-card border shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <h5 class="card-title">PRO</h5>
+                        <div class="mb-3">
+                            <span class="display-4 fw-bold">799K</span>
+                            <span class="text-muted">/tháng</span>
+                        </div>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>20 sự kiện</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>5,000 khách mời</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Tùy chỉnh giao diện</li>
+                            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>API tích hợp</li>
+                        </ul>
+                        <button class="btn btn-outline-primary w-100">Chọn gói này</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-4">
+            <a href="/Home/Pricing" class="btn btn-link">Xem chi tiết tất cả gói <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="bg-primary text-white py-5">
+    <div class="container text-center">
+        <h2 class="fw-bold mb-3">Sẵn sàng bắt đầu?</h2>
+        <p class="lead mb-4">Tạo sự kiện đầu tiên của bạn trong vài phút</p>
+        <button class="btn btn-light btn-lg px-4" data-bs-toggle="modal" data-bs-target="#registerModal">
+            <i class="bi bi-rocket-takeoff me-2"></i>
+            Tạo tài khoản miễn phí
+        </button>
+    </div>
+</section> 
